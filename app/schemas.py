@@ -41,6 +41,10 @@ class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserModerationUpdate(BaseModel):
+    is_blocked: bool
+
+
 class ItemBase(BaseModel):
     title: str = Field(min_length=3, max_length=150)
     description: str = Field(min_length=10)
@@ -118,3 +122,12 @@ class ChatMessageRead(BaseModel):
 class ChatWebSocketEvent(BaseModel):
     type: str = "encrypted_message"
     message: ChatMessageRead
+
+
+class ChatRoomInfo(BaseModel):
+    claim_id: int
+    item_id: int
+    participants: list[int]
+    is_realtime_enabled: bool
+    encryption: str
+    active_connections: int

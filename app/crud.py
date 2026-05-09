@@ -42,9 +42,18 @@ class UserRepository(BaseRepository):
     def get_by_email(self, email: str) -> models.User | None:
         return self.db.query(models.User).filter(models.User.email == email.lower()).first()
 
-    def block(self, user: models.User) -> models.User:
-        user.is_blocked = True
+    def list(self, skip: int = 0, limit: int = 20, include_blocked: bool = True) -> list[models.User]:
+        query = self.db.query(models.User)
+        if not include_blocked:
+            query = query.filter(models.User.is_blocked.is_(False))
+        return query.order_by(models.User.created_at.desc()).offset(skip).limit(limit).all()
+
+    def set_blocked(self, user: models.User, is_blocked: bool) -> models.User:
+        user.is_blocked = is_blocked
         return self.save(user)
+
+    def block(self, user: models.User) -> models.User:
+        return self.set_blocked(user, True)
 
 
 class ItemRepository(BaseRepository):
@@ -66,6 +75,7 @@ class ItemRepository(BaseRepository):
     def list(
         self,
         category: models.ItemCategory | None = None,
+        status: models.ItemStatus | None = None,
         location: str | None = None,
         keyword: str | None = None,
         skip: int = 0,
@@ -74,6 +84,8 @@ class ItemRepository(BaseRepository):
         query = self.db.query(models.Item)
         if category:
             query = query.filter(models.Item.category == category.value)
+        if status:
+            query = query.filter(models.Item.status == status.value)
         if location:
             query = query.filter(models.Item.location.ilike(f"%{location}%"))
         if keyword:
@@ -119,6 +131,16 @@ class ClaimRepository(BaseRepository):
 
 
 class ChatRepository(BaseRepository):
+    def list_messages(self, claim_id: int, skip: int = 0, limit: int = 50) -> list[models.ChatMessage]:
+        return (
+            self.db.query(models.ChatMessage)
+            .filter(models.ChatMessage.claim_id == claim_id)
+            .order_by(models.ChatMessage.created_at.asc(), models.ChatMessage.id.asc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
     def create_message(
         self,
         claim: models.Claim,

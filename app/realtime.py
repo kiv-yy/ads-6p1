@@ -22,5 +22,8 @@ class ChatConnectionManager:
         for connection in list(self.active_connections.get(claim_id, [])):
             await connection.send_json(payload)
 
+    def count_for_claim(self, claim_id: int) -> int:
+        return len(self.active_connections.get(claim_id, []))
+
 
 chat_manager = ChatConnectionManager()

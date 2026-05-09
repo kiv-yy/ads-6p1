@@ -101,13 +101,21 @@ def create_item(
 @app.get("/items", response_model=list[schemas.ItemRead], tags=["Items"])
 def list_items(
     category: models.ItemCategory | None = None,
+    item_status: models.ItemStatus | None = Query(default=None, alias="status"),
     location: str | None = None,
     keyword: str | None = None,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
 ) -> list[models.Item]:
-    return ItemRepository(db).list(category=category, location=location, keyword=keyword, skip=skip, limit=limit)
+    return ItemRepository(db).list(
+        category=category,
+        status=item_status,
+        location=location,
+        keyword=keyword,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @app.get("/items/{item_id}", response_model=schemas.ItemRead, tags=["Items"])
@@ -193,6 +201,8 @@ def update_claim_status(
 @app.get("/claims/{claim_id}/chat", response_model=list[schemas.ChatMessageRead], tags=["Chat"])
 def list_chat_messages(
     claim_id: int,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_dev_current_user),
 ) -> list[models.ChatMessage]:
@@ -203,7 +213,30 @@ def list_chat_messages(
         raise ApiError.forbidden("Only claim participants can access this resource")
     if not AuthorizationPolicy.can_chat(claim, current_user):
         raise ApiError.forbidden("Chat is available only for accepted claims")
-    return claim.messages
+    return ChatRepository(db).list_messages(claim_id=claim.id, skip=skip, limit=limit)
+
+
+@app.get("/claims/{claim_id}/chat/info", response_model=schemas.ChatRoomInfo, tags=["Chat"])
+def read_chat_room_info(
+    claim_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_dev_current_user),
+) -> schemas.ChatRoomInfo:
+    claim = ClaimRepository(db).get(claim_id)
+    if not claim:
+        raise ApiError.not_found("Claim")
+    if not AuthorizationPolicy.can_access_claim(claim, current_user):
+        raise ApiError.forbidden("Only claim participants can access this resource")
+    if not AuthorizationPolicy.can_chat(claim, current_user):
+        raise ApiError.forbidden("Chat is available only for accepted claims")
+    return schemas.ChatRoomInfo(
+        claim_id=claim.id,
+        item_id=claim.item_id,
+        participants=[claim.item.owner_id, claim.claimant_id],
+        is_realtime_enabled=True,
+        encryption="client-side end-to-end; server stores ciphertext only",
+        active_connections=chat_manager.count_for_claim(claim.id),
+    )
 
 
 @app.post("/claims/{claim_id}/chat", response_model=schemas.ChatMessageRead, status_code=status.HTTP_201_CREATED, tags=["Chat"])
@@ -276,6 +309,17 @@ def admin_delete_item(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@app.get("/admin/users", response_model=list[schemas.UserRead], tags=["Admin"])
+def admin_list_users(
+    include_blocked: bool = True,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_dev_admin_user),
+) -> list[models.User]:
+    return UserRepository(db).list(skip=skip, limit=limit, include_blocked=include_blocked)
+
+
 @app.patch("/admin/users/{user_id}/block", response_model=schemas.UserRead, tags=["Admin"])
 def admin_block_user(
     user_id: int,
@@ -287,3 +331,17 @@ def admin_block_user(
     if not user:
         raise ApiError.not_found("User")
     return users.block(user)
+
+
+@app.patch("/admin/users/{user_id}/moderation", response_model=schemas.UserRead, tags=["Admin"])
+def admin_update_user_moderation(
+    user_id: int,
+    moderation_in: schemas.UserModerationUpdate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_dev_admin_user),
+) -> models.User:
+    users = UserRepository(db)
+    user = users.get(user_id)
+    if not user:
+        raise ApiError.not_found("User")
+    return users.set_blocked(user, moderation_in.is_blocked)
