@@ -98,6 +98,17 @@ class ClaimRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AdminStats(BaseModel):
+    total_users: int
+    blocked_users: int
+    total_items: int
+    open_items: int
+    resolved_items: int
+    total_claims: int
+    pending_claims: int
+    accepted_claims: int
+
+
 class ChatMessageCreate(BaseModel):
     ciphertext: str = Field(min_length=1, max_length=8000)
     nonce: str = Field(min_length=8, max_length=255)

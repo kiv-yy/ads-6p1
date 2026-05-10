@@ -171,7 +171,26 @@ def create_claim(
         raise ApiError.bad_request("You cannot claim your own item")
     if item.category != models.ItemCategory.FOUND.value:
         raise ApiError.bad_request("Only found items can be claimed")
-    return ClaimRepository(db).create(claim_in, claimant_id=current_user.id)
+    claims = ClaimRepository(db)
+    if claims.get_active_for_item_and_claimant(item.id, current_user.id):
+        raise ApiError.bad_request("You already have an active claim for this item")
+    return claims.create(claim_in, claimant_id=current_user.id)
+
+
+@app.get("/items/{item_id}/claims", response_model=list[schemas.ClaimRead], tags=["Claims"])
+def list_item_claims(
+    item_id: int,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_dev_current_user),
+) -> list[models.Claim]:
+    item = ItemRepository(db).get(item_id)
+    if not item:
+        raise ApiError.not_found("Item")
+    if not AuthorizationPolicy.can_manage_item(item, current_user):
+        raise ApiError.forbidden("Only item owner can view item claims")
+    return ClaimRepository(db).list_for_item(item_id=item.id, skip=skip, limit=limit)
 
 
 @app.get("/claims", response_model=list[schemas.ClaimRead], tags=["Claims"])
@@ -196,6 +215,21 @@ def update_claim_status(
     if not AuthorizationPolicy.can_moderate_claim(claim, current_user):
         raise ApiError.forbidden("Only item owner can moderate claims")
     return claims.update_status(claim, claim_in.status)
+
+
+@app.patch("/items/{item_id}/resolve", response_model=schemas.ItemRead, tags=["Items"])
+def resolve_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_dev_current_user),
+) -> models.Item:
+    items = ItemRepository(db)
+    item = items.get(item_id)
+    if not item:
+        raise ApiError.not_found("Item")
+    if not AuthorizationPolicy.can_manage_item(item, current_user):
+        raise ApiError.forbidden("Only item owner can resolve this item")
+    return items.update(item, schemas.ItemUpdate(status=models.ItemStatus.RESOLVED))
 
 
 @app.get("/claims/{claim_id}/chat", response_model=list[schemas.ChatMessageRead], tags=["Chat"])
@@ -318,6 +352,23 @@ def admin_list_users(
     _: models.User = Depends(get_dev_admin_user),
 ) -> list[models.User]:
     return UserRepository(db).list(skip=skip, limit=limit, include_blocked=include_blocked)
+
+
+@app.get("/admin/stats", response_model=schemas.AdminStats, tags=["Admin"])
+def admin_read_stats(
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_dev_admin_user),
+) -> schemas.AdminStats:
+    return schemas.AdminStats(
+        total_users=db.query(models.User).count(),
+        blocked_users=db.query(models.User).filter(models.User.is_blocked.is_(True)).count(),
+        total_items=db.query(models.Item).count(),
+        open_items=db.query(models.Item).filter(models.Item.status == models.ItemStatus.OPEN.value).count(),
+        resolved_items=db.query(models.Item).filter(models.Item.status == models.ItemStatus.RESOLVED.value).count(),
+        total_claims=db.query(models.Claim).count(),
+        pending_claims=db.query(models.Claim).filter(models.Claim.status == models.ClaimStatus.PENDING.value).count(),
+        accepted_claims=db.query(models.Claim).filter(models.Claim.status == models.ClaimStatus.ACCEPTED.value).count(),
+    )
 
 
 @app.patch("/admin/users/{user_id}/block", response_model=schemas.UserRead, tags=["Admin"])

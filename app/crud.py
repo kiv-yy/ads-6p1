@@ -114,6 +114,27 @@ class ClaimRepository(BaseRepository):
     def get(self, claim_id: int) -> models.Claim | None:
         return self.db.get(models.Claim, claim_id)
 
+    def get_active_for_item_and_claimant(self, item_id: int, claimant_id: int) -> models.Claim | None:
+        return (
+            self.db.query(models.Claim)
+            .filter(
+                models.Claim.item_id == item_id,
+                models.Claim.claimant_id == claimant_id,
+                models.Claim.status.in_([models.ClaimStatus.PENDING.value, models.ClaimStatus.ACCEPTED.value]),
+            )
+            .first()
+        )
+
+    def list_for_item(self, item_id: int, skip: int = 0, limit: int = 50) -> list[models.Claim]:
+        return (
+            self.db.query(models.Claim)
+            .filter(models.Claim.item_id == item_id)
+            .order_by(models.Claim.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
     def list_for_user(self, user_id: int) -> list[models.Claim]:
         return (
             self.db.query(models.Claim)
