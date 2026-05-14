@@ -1,15 +1,15 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from app.db.database import Base
 
 
-class UserRole(str, Enum):
-    STUDENT = "Student"
-    ADMIN = "Admin"
+class ItemType(str, Enum):
+    LOST = "LOST"
+    FOUND = "FOUND"
 
 
 class ItemCategory(str, Enum):
@@ -29,33 +29,15 @@ class ClaimStatus(str, Enum):
     REJECTED = "Rejected"
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(String(30), default=UserRole.STUDENT.value, nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    is_blocked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    items: Mapped[list["Item"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
-    claims: Mapped[list["Claim"]] = relationship(
-        back_populates="claimant",
-        foreign_keys="Claim.claimant_id",
-        cascade="all, delete-orphan",
-    )
-
-
 class Item(Base):
     __tablename__ = "items"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(150), index=True, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    category: Mapped[ItemCategory] = mapped_column(String(20), index=True, nullable=False)
+    category: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
+    type: Mapped[str] = mapped_column(String(20), default=ItemType.LOST.value, index=True, nullable=False)
+    traits: Mapped[str | None] = mapped_column(Text, nullable=True)
     location: Mapped[str] = mapped_column(String(150), index=True, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -63,7 +45,7 @@ class Item(Base):
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    owner: Mapped[User] = relationship(back_populates="items")
+    owner: Mapped["User"] = relationship(back_populates="items")
     claims: Mapped[list["Claim"]] = relationship(back_populates="item", cascade="all, delete-orphan")
     messages: Mapped[list["ChatMessage"]] = relationship(back_populates="item", cascade="all, delete-orphan")
 
@@ -80,7 +62,7 @@ class Claim(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
 
     item: Mapped[Item] = relationship(back_populates="claims")
-    claimant: Mapped[User] = relationship(back_populates="claims", foreign_keys=[claimant_id])
+    claimant: Mapped["User"] = relationship(back_populates="claims", foreign_keys=[claimant_id])
     messages: Mapped[list["ChatMessage"]] = relationship(back_populates="claim", cascade="all, delete-orphan")
 
 
@@ -99,8 +81,12 @@ class ChatMessage(Base):
 
     claim: Mapped[Claim] = relationship(back_populates="messages")
     item: Mapped[Item] = relationship(back_populates="messages")
-    sender: Mapped[User] = relationship()
+    sender: Mapped["User"] = relationship()
 
     @property
     def ciphertext(self) -> str:
         return self.content
+
+    @property
+    def user_id(self) -> int:
+        return self.sender_id

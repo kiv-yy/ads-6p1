@@ -6,15 +6,15 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
-from app.database import get_db
+from app.core.config import get_settings
+from app.db.database import get_db
 from app.models import User, UserRole
 from app.schemas import TokenData
 
 
 settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 class PasswordService:
@@ -95,20 +95,12 @@ password_service = PasswordService()
 token_service = TokenService()
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return password_service.verify(plain_password, hashed_password)
-
-
 def get_password_hash(password: str) -> str:
     return password_service.hash(password)
 
 
 def create_access_token(subject: str, expires_delta: timedelta | None = None) -> str:
     return token_service.create_access_token(subject, expires_delta)
-
-
-def authenticate_user(db: Session, email: str, password: str) -> User | None:
-    return AuthService(db).authenticate(email, password)
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:

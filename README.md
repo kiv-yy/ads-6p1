@@ -14,7 +14,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item .env.example .env
-fastapi dev app/main.py
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Default database memakai SQLite. Untuk PostgreSQL, ubah `DATABASE_URL` di `.env`, misalnya:
@@ -25,10 +25,13 @@ DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/ipb_lost_found
 
 ## Frontend Setup
 
-```bash
+```powershell
+Set-Location frontend
 npm install
-npm run dev
+npm run dev -- --host 127.0.0.1 --port 3000
 ```
+
+Frontend akan membaca backend dari `http://localhost:8000` secara default.
 
 ## Backend Features
 
@@ -53,11 +56,12 @@ npm run dev
 
 ## Struktur Backend OOP
 
-- `app/models.py`: entity/model SQLAlchemy berbasis class.
-- `app/schemas.py`: DTO/request-response schema Pydantic berbasis class.
-- `app/auth.py`: `PasswordService`, `TokenService`, dan `AuthService`.
-- `app/crud.py`: repository classes seperti `UserRepository`, `ItemRepository`, `ClaimRepository`, `ChatRepository`, serta `AuthorizationPolicy`.
-- `app/realtime.py`: `ChatConnectionManager` untuk koneksi WebSocket per claim.
+- `app/models/`: entity/model SQLAlchemy berbasis class.
+- `app/schemas/`: DTO/request-response schema Pydantic berbasis class.
+- `app/core/security.py`: `PasswordService`, `TokenService`, dan `AuthService`.
+- `app/services/`: repository/service classes seperti `UserRepository`, `ItemRepository`, `ClaimRepository`, `ChatRepository`, serta `AuthorizationPolicy`.
+- `app/routers/`: route publik untuk user, auth, item, claim, dan chat.
+- `app/internal/admin.py`: route admin.
 - `app/main.py`: endpoint FastAPI tipis yang memanggil service/repository classes.
 
 ## Mode Tanpa Login
