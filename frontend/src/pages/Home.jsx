@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MapPin } from "lucide-react";
 import { Link } from 'react-router-dom';
 import { Plus, Search, ChevronRight, Laptop, Briefcase, Key, Package, CreditCard, Book, Watch, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
