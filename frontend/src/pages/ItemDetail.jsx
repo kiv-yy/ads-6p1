@@ -4,6 +4,7 @@ import { MapPin, Calendar, Clock, User, Phone, Mail, ChevronLeft, Share2, Packag
 import api from '../api/axios';
 import { Button, Card, Badge } from '../components/UI';
 import { useAuth } from '../contexts/AuthContext';
+import { itemTypeLabel, itemTypeVariant } from '../utils/itemType';
 
 export default function ItemDetail() {
   const { id } = useParams();
@@ -54,8 +55,8 @@ export default function ItemDetail() {
                 </div>
               )}
               <div className="absolute top-6 left-6">
-                <Badge variant={item.type === 'LOST' ? 'hilang' : 'ditemukan'}>
-                  {item.type === 'LOST' ? 'Hilang' : 'Ditemukan'}
+                <Badge variant={itemTypeVariant(item.type)}>
+                  {itemTypeLabel(item.type)}
                 </Badge>
               </div>
             </div>

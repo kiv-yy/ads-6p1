@@ -1,8 +1,9 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field, field_validator
 
-from app.models import UserRole
+from app.models import AccountStatus, UserRole
 
 
 class Token(BaseModel):
@@ -11,14 +12,14 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    user_id: int | None = None
+    user_id: UUID | None = None
 
 
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: str = Field(min_length=2, max_length=255)
-    faculty: str | None = Field(default=None, max_length=150)
-    nim: str | None = Field(default=None, max_length=50)
+    full_name: str = Field(min_length=2, max_length=100)
+    faculty: str | None = Field(default=None, max_length=100)
+    nim: str = Field(min_length=3, max_length=20)
 
     @field_validator("email")
     @classmethod
@@ -34,13 +35,43 @@ class UserCreate(UserBase):
 
 
 class UserRead(UserBase):
-    id: int
+    id: UUID
+    profile_photo: str | None = None
     role: UserRole
-    is_active: bool
-    is_blocked: bool
+    account_status: AccountStatus
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field
+    @property
+    def user_id(self) -> UUID:
+        return self.id
+
+    @computed_field
+    @property
+    def nama(self) -> str:
+        return self.full_name
+
+    @computed_field
+    @property
+    def email_ipb(self) -> str:
+        return str(self.email)
+
+    @computed_field
+    @property
+    def fakultas(self) -> str | None:
+        return self.faculty
+
+    @computed_field
+    @property
+    def is_active(self) -> bool:
+        return self.account_status == AccountStatus.ACTIVE
+
+    @computed_field
+    @property
+    def is_blocked(self) -> bool:
+        return self.account_status == AccountStatus.BANNED
 
     @computed_field
     @property
@@ -50,6 +81,7 @@ class UserRead(UserBase):
 
 class UserModerationUpdate(BaseModel):
     is_blocked: bool
+    notes: str | None = Field(default=None, max_length=1000)
 
 
 class AdminStats(BaseModel):
@@ -61,3 +93,5 @@ class AdminStats(BaseModel):
     total_claims: int
     pending_claims: int
     accepted_claims: int
+    total_reports: int = 0
+    pending_reports: int = 0

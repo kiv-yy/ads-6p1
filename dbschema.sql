@@ -61,7 +61,7 @@ COMMENT ON COLUMN users.status_akun     IS 'aktif | nonaktif | banned';
 
 CREATE TABLE IF NOT EXISTS categories (
     category_id     UUID            PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nama_kategori   VARCHAR(100)    NOT NULL UNIQUE,
+    nama_kategori   VARCHAR(100)    NOT NULL UNIQUE
 );
 
 COMMENT ON TABLE  categories            IS 'Kategori barang hilang/temuan';

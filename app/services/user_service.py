@@ -1,10 +1,11 @@
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from app import schemas
 from app.core.security import PasswordService
-from app.models import User
+from app.models import AccountStatus, User
 
 
 class BaseRepository:
@@ -37,21 +38,23 @@ class UserRepository(BaseRepository):
         )
         return self.save(user)
 
-    def get(self, user_id: int) -> User | None:
+    def get(self, user_id: UUID) -> User | None:
         return self.db.get(User, user_id)
 
     def get_by_email(self, email: str) -> User | None:
         return self.db.query(User).filter(User.email == email.lower()).first()
 
+    def get_by_nim(self, nim: str) -> User | None:
+        return self.db.query(User).filter(User.nim == nim).first()
+
     def list(self, skip: int = 0, limit: int = 20, include_blocked: bool = True) -> list[User]:
         query = self.db.query(User)
         if not include_blocked:
-            query = query.filter(User.is_blocked.is_(False))
+            query = query.filter(User.account_status != AccountStatus.BANNED.value)
         return query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
 
     def set_blocked(self, user: User, is_blocked: bool) -> User:
-        user.is_blocked = is_blocked
-        user.is_active = not is_blocked
+        user.account_status = AccountStatus.BANNED.value if is_blocked else AccountStatus.ACTIVE.value
         return self.save(user)
 
     def block(self, user: User) -> User:

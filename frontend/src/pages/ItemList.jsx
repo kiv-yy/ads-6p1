@@ -4,6 +4,7 @@ import { Search, Filter, Package, Calendar, MapPin, ChevronRight, Laptop, Briefc
 import api from '../api/axios';
 import { Input, Button, Card, Badge } from '../components/UI';
 import { cn } from '../utils/cn';
+import { itemTypeLabel, itemTypeVariant } from '../utils/itemType';
 
 const CATEGORIES = ['Semua', 'Elektronik', 'Dompet/Tas', 'Kunci', 'Kartu', 'Buku', 'Lainnya'];
 
@@ -146,8 +147,8 @@ export default function ItemList() {
                     </div>
                   )}
                   <div className="absolute top-3 left-3">
-                    <Badge variant={item.type === 'LOST' ? 'hilang' : 'ditemukan'}>
-                      {item.type === 'LOST' ? 'Hilang' : 'Ditemukan'}
+                    <Badge variant={itemTypeVariant(item.type)}>
+                      {itemTypeLabel(item.type)}
                     </Badge>
                   </div>
                 </div>

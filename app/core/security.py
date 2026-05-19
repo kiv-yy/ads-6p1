@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.database import get_db
-from app.models import User, UserRole
+from app.models import AccountStatus, User, UserRole
 from app.schemas import TokenData
 
 
@@ -44,12 +45,12 @@ class TokenService:
         payload = {"sub": subject, "exp": expire}
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
-    def decode_subject(self, token: str) -> int:
+    def decode_subject(self, token: str) -> UUID:
         payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
         user_id = payload.get("sub")
         if user_id is None:
             raise ValueError("Missing token subject")
-        return int(user_id)
+        return UUID(str(user_id))
 
 
 class AuthService:
@@ -86,7 +87,7 @@ class AuthService:
         user = self.db.get(User, token_data.user_id)
         if user is None:
             raise credentials_exception
-        if not user.is_active or user.is_blocked:
+        if user.account_status != AccountStatus.ACTIVE.value:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User inactive or blocked")
         return user
 

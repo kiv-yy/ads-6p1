@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.core.security import AuthService, create_access_token
 from app.db.database import get_db
 from app.dependencies import ApiError, get_dev_current_user
-from app.models import User
+from app.models import AccountStatus, User
 from app.services.user_service import UserRepository
 
 
@@ -22,6 +22,8 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)) -> User
     users = UserRepository(db)
     if users.get_by_email(user_in.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+    if users.get_by_nim(user_in.nim):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="NIM already registered")
     return users.create(user_in)
 
 
@@ -37,7 +39,7 @@ def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    if user.is_blocked:
+    if user.account_status == AccountStatus.BANNED.value:
         raise ApiError.forbidden("User is blocked")
 
     expires_delta = timedelta(minutes=settings.access_token_expire_minutes)

@@ -4,6 +4,7 @@ import { ChevronLeft, Info, Upload, Package, MapPin, Calendar, CheckCircle2 } fr
 import api from '../api/axios';
 import { Button, Card, Input, Badge } from '../components/UI';
 import { useAuth } from '../contexts/AuthContext';
+import { itemTypeLabel, itemTypeVariant, isLostItem } from '../utils/itemType';
 
 export default function Claim() {
   const { id } = useParams();
@@ -193,10 +194,10 @@ export default function Claim() {
                     <Calendar size={18} className="shrink-0" />
                     <span>{new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   </div>
-                  <Badge variant={item.type === 'LOST' ? 'hilang' : 'ditemukan'}>
+                  <Badge variant={itemTypeVariant(item.type)}>
                     <div className="flex items-center gap-1.5 capitalize">
-                      <div className={`w-1.5 h-1.5 rounded-full ${item.type === 'LOST' ? 'bg-red-500' : 'bg-teal-500'}`} />
-                      {item.type.toLowerCase()}
+                      <div className={`w-1.5 h-1.5 rounded-full ${isLostItem(item.type) ? 'bg-red-500' : 'bg-teal-500'}`} />
+                      {itemTypeLabel(item.type)}
                     </div>
                   </Badge>
                 </div>

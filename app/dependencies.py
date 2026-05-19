@@ -1,9 +1,10 @@
 from fastapi import Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from uuid import UUID
 
 from app.core.security import oauth2_scheme, AuthService
 from app.db.database import get_db
-from app.models import User, UserRole
+from app.models import AccountStatus, User, UserRole
 from app.services.user_service import UserRepository
 
 
@@ -23,7 +24,7 @@ class ApiError:
 
 def get_current_or_dev_user(
     token: str | None = Depends(oauth2_scheme),
-    current_user_id: int | None = Query(default=None),
+    current_user_id: UUID | None = Query(default=None),
     db: Session = Depends(get_db),
 ) -> User:
     if token:
@@ -34,7 +35,7 @@ def get_current_or_dev_user(
     user = UserRepository(db).get(current_user_id)
     if not user:
         raise ApiError.not_found("User")
-    if not user.is_active or user.is_blocked:
+    if user.account_status != AccountStatus.ACTIVE.value:
         raise ApiError.forbidden("User inactive or blocked")
     return user
 

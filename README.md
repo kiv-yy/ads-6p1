@@ -5,7 +5,7 @@ Full-stack Lost & Found Information System untuk mahasiswa IPB University.
 Repository ini berisi:
 
 - Frontend React + Vite + Tailwind CSS.
-- Backend FastAPI OOP untuk item lost/found, claim, dan realtime encrypted chat relay.
+- Backend FastAPI OOP untuk post lost/found, claim, report, admin moderation, dan realtime encrypted chat relay.
 
 ## Backend Setup
 
@@ -20,7 +20,7 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 Default database memakai SQLite. Untuk PostgreSQL, ubah `DATABASE_URL` di `.env`, misalnya:
 
 ```env
-DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/ipb_lost_found
+DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/ads_lost_found
 ```
 
 ## Frontend Setup
@@ -35,12 +35,13 @@ Frontend akan membaca backend dari `http://localhost:8000` secara default.
 
 ## Backend Features
 
-- OAuth2 Password Flow dengan JWT sudah tersedia, tetapi sementara endpoint memakai `current_user_id` query parameter agar development bisa jalan tanpa login.
+- OAuth2 Password Flow dengan JWT sudah tersedia. Mode development juga masih mendukung `current_user_id` query parameter.
 - User dengan email institusi IPB dan role admin.
-- CRUD item lost/found dengan search dan filter.
-- Claim barang ditemukan dengan status `Pending`, `Accepted`, `Rejected`.
-- Realtime chat via WebSocket, terbatas hanya untuk claim yang sudah `Accepted`.
-- End-to-end encryption friendly: server hanya menyimpan dan broadcast ciphertext, nonce, algorithm, dan public key metadata. Enkripsi/dekripsi dilakukan di client.
+- CRUD post lost/found dengan search dan filter, mengikuti tabel `posts`, `categories`, dan `post_images` dari `dbschema.sql`.
+- Claim barang ditemukan dengan status `pending`, `diterima`, `ditolak`.
+- Report post dan admin moderation log mengikuti tabel `reports` dan `admin_actions`.
+- Realtime chat via WebSocket, terbatas hanya untuk claim yang sudah `diterima`.
+- End-to-end encryption friendly: server menyimpan ciphertext di `chat_messages.isi_pesan`. Enkripsi/dekripsi dilakukan di client.
 - Endpoint admin untuk hapus post dan blokir user.
 
 ## Frontend Features Planned
@@ -56,11 +57,11 @@ Frontend akan membaca backend dari `http://localhost:8000` secara default.
 
 ## Struktur Backend OOP
 
-- `app/models/`: entity/model SQLAlchemy berbasis class.
-- `app/schemas/`: DTO/request-response schema Pydantic berbasis class.
+- `app/models/`: entity/model SQLAlchemy berbasis class dan dipisah per tabel/domain: `post.py`, `claim.py`, `chat.py`, `report.py`, `category.py`, `admin_action.py`, `user.py`.
+- `app/schemas/`: DTO/request-response schema Pydantic berbasis class dan dipisah per logic: `post.py`, `claim.py`, `chat.py`, `report.py`, `category.py`, `user.py`.
 - `app/core/security.py`: `PasswordService`, `TokenService`, dan `AuthService`.
-- `app/services/`: repository/service classes seperti `UserRepository`, `ItemRepository`, `ClaimRepository`, `ChatRepository`, serta `AuthorizationPolicy`.
-- `app/routers/`: route publik untuk user, auth, item, claim, dan chat.
+- `app/services/`: repository/service classes dipisah per logic: `posts.py`, `claims.py`, `chat.py`, `reports.py`, `categories.py`, `authorization.py`.
+- `app/routers/`: route publik dipisah per logic: `posts.py`, `claims.py`, `chat.py`, `reports.py`, `categories.py`, `users.py`.
 - `app/internal/admin.py`: route admin.
 - `app/main.py`: endpoint FastAPI tipis yang memanggil service/repository classes.
 
@@ -69,9 +70,9 @@ Frontend akan membaca backend dari `http://localhost:8000` secara default.
 Untuk sementara, endpoint yang butuh user memakai query parameter:
 
 ```text
-POST /items?current_user_id=1
-GET /claims?current_user_id=1
-PATCH /admin/users/2/block?current_user_id=1
+POST /items?current_user_id={user_uuid}
+GET /claims?current_user_id={user_uuid}
+PATCH /admin/users/{user_uuid}/block?current_user_id={admin_uuid}
 ```
 
 `current_user_id` harus mengarah ke user yang ada di database dan belum diblokir.
@@ -81,12 +82,12 @@ PATCH /admin/users/2/block?current_user_id=1
 WebSocket endpoint:
 
 ```text
-ws://localhost:8000/ws/claims/{claim_id}/chat?current_user_id=1
+ws://localhost:8000/ws/claims/{claim_id}/chat?token={jwt_token}
 ```
 
 Syarat akses:
 
-- `Claim.status` harus `Accepted`.
+- `Claim.status` harus `diterima`.
 - User harus menjadi pemilik item atau claimant pada claim tersebut.
 
 Payload yang dikirim client adalah ciphertext, bukan plaintext:
@@ -106,10 +107,10 @@ Server akan broadcast event:
 {
   "type": "encrypted_message",
   "message": {
-    "id": 1,
-    "claim_id": 3,
-    "item_id": 7,
-    "sender_id": 1,
+    "id": "message-uuid",
+    "claim_id": "claim-uuid",
+    "item_id": "post-uuid",
+    "sender_id": "user-uuid",
     "ciphertext": "base64-ciphertext-from-client",
     "nonce": "base64-random-nonce",
     "algorithm": "X25519+AES-256-GCM",

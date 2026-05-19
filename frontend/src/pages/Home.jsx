@@ -5,6 +5,7 @@ import { Plus, Search, ChevronRight, Laptop, Briefcase, Key, Package, CreditCard
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Badge } from '../components/UI';
 import api from '../api/axios';
+import { itemTypeLabel, itemTypeVariant } from '../utils/itemType';
 
 const CATEGORIES = [
   { name: 'Elektronik', icon: Laptop },
@@ -101,8 +102,8 @@ export default function Home() {
                       </div>
                     )}
                     <div className="absolute top-4 right-4">
-                      <Badge variant={item.type === 'LOST' ? 'hilang' : 'ditemukan'}>
-                        {item.type === 'LOST' ? 'Hilang' : 'Ditemukan'}
+                      <Badge variant={itemTypeVariant(item.type)}>
+                        {itemTypeLabel(item.type)}
                       </Badge>
                     </div>
                   </div>

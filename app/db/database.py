@@ -25,23 +25,20 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def ensure_sqlite_compat_columns() -> None:
-    if not settings.database_url.startswith("sqlite"):
-        return
+def seed_default_categories() -> None:
+    from app.models import Category
 
-    with engine.begin() as connection:
-        user_columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(users)").fetchall()}
-        item_columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(items)").fetchall()}
-
-        if "faculty" not in user_columns:
-            connection.exec_driver_sql("ALTER TABLE users ADD COLUMN faculty VARCHAR(150)")
-        if "nim" not in user_columns:
-            connection.exec_driver_sql("ALTER TABLE users ADD COLUMN nim VARCHAR(50)")
-
-        if "type" not in item_columns:
-            connection.exec_driver_sql("ALTER TABLE items ADD COLUMN type VARCHAR(20) DEFAULT 'LOST' NOT NULL")
-        if "traits" not in item_columns:
-            connection.exec_driver_sql("ALTER TABLE items ADD COLUMN traits TEXT")
-        connection.exec_driver_sql("UPDATE items SET type = 'LOST' WHERE type IS NULL OR type = ''")
-        connection.exec_driver_sql("UPDATE items SET type = 'LOST' WHERE category = 'Lost'")
-        connection.exec_driver_sql("UPDATE items SET type = 'FOUND' WHERE category = 'Found'")
+    default_categories = [
+        "Elektronik",
+        "Dompet / Tas",
+        "Kartu Identitas",
+        "Kunci",
+        "Pakaian",
+        "Lainnya",
+    ]
+    with SessionLocal() as db:
+        existing = {name for (name,) in db.query(Category.name).all()}
+        for name in default_categories:
+            if name not in existing:
+                db.add(Category(name=name))
+        db.commit()

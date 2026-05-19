@@ -10,6 +10,8 @@ export default function CreateReport() {
   const [searchParams] = useSearchParams();
   const [type, setType] = useState(searchParams.get('type')?.toUpperCase() || 'LOST');
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -25,9 +27,20 @@ export default function CreateReport() {
     e.preventDefault();
     setLoading(true);
     try {
+      let image_url = null;
+      if (imageFile) {
+        const uploadData = new FormData();
+        uploadData.append('file', imageFile);
+        const uploadResponse = await api.post('/items/upload-image', uploadData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        image_url = uploadResponse.data.image_url;
+      }
+
       await api.post('/items', {
         ...formData,
         type: type,
+        image_url,
       });
       navigate('/items');
     } catch (error) {
@@ -35,6 +48,19 @@ export default function CreateReport() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview('');
   };
 
   return (
@@ -161,15 +187,35 @@ export default function CreateReport() {
 
           <div className="space-y-4">
             <label className="text-sm font-medium text-gray-700 ml-1">Upload Foto</label>
-            <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 hover:bg-gray-50 transition-colors cursor-pointer group">
-              <div className="w-12 h-12 bg-gray-100 group-hover:bg-ipb-green-light rounded-full flex items-center justify-center transition-colors">
-                <Camera size={24} className="text-gray-400 group-hover:text-ipb-green" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-gray-700">Tarik foto ke sini</p>
-                <p className="text-xs text-gray-400">atau klik untuk memilih file</p>
-              </div>
-            </div>
+            <label className="border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 hover:bg-gray-50 transition-colors cursor-pointer group overflow-hidden">
+              {imagePreview ? (
+                <div className="relative w-full">
+                  <img src={imagePreview} alt="Preview foto barang" className="w-full max-h-72 object-cover rounded-2xl" />
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      clearImage();
+                    }}
+                    className="absolute top-3 right-3 w-10 h-10 rounded-xl bg-white/90 text-red-500 shadow flex items-center justify-center"
+                    aria-label="Hapus foto"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="w-12 h-12 bg-gray-100 group-hover:bg-ipb-green-light rounded-full flex items-center justify-center transition-colors">
+                    <Camera size={24} className="text-gray-400 group-hover:text-ipb-green" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-gray-700">Klik untuk memilih foto</p>
+                    <p className="text-xs text-gray-400">JPG, PNG, WEBP, atau GIF</p>
+                  </div>
+                </>
+              )}
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+            </label>
           </div>
         </Card>
 
