@@ -5,7 +5,7 @@ Full-stack Lost & Found Information System untuk mahasiswa IPB University.
 Repository ini berisi:
 
 - Frontend React + Vite + Tailwind CSS.
-- Backend FastAPI OOP untuk post lost/found, claim, report, admin moderation, dan realtime encrypted chat relay.
+- Backend FastAPI OOP untuk post lost/found, claim, notifikasi, report, admin moderation, dan realtime encrypted chat relay.
 
 ## Backend Setup
 
@@ -36,9 +36,10 @@ Frontend akan membaca backend dari `http://localhost:8000` secara default.
 ## Backend Features
 
 - OAuth2 Password Flow dengan JWT sudah tersedia. Mode development juga masih mendukung `current_user_id` query parameter.
-- User dengan email institusi IPB dan role admin.
+- User dengan email `@apps.ipb.ac.id`, verifikasi email sebelum login, dan role admin.
 - CRUD post lost/found dengan search dan filter, mengikuti tabel `posts`, `categories`, dan `post_images` dari `dbschema.sql`.
 - Claim barang ditemukan dengan status `pending`, `diterima`, `ditolak`.
+- Notifikasi history untuk klaim baru, perubahan status klaim, dan chat baru. Notifikasi mengarah ke detail laporan atau halaman chat yang sesuai.
 - Report post dan admin moderation log mengikuti tabel `reports` dan `admin_actions`.
 - Realtime chat via WebSocket, terbatas hanya untuk claim yang sudah `diterima`.
 - End-to-end encryption friendly: server menyimpan ciphertext di `chat_messages.isi_pesan`. Enkripsi/dekripsi dilakukan di client.
@@ -50,7 +51,7 @@ Frontend akan membaca backend dari `http://localhost:8000` secara default.
 - Lost item reports.
 - Found item reports.
 - Search & filter items.
-- Item detail page.
+- Item detail page dengan klaim barang hilang/temuan, moderasi klaim untuk pemilik laporan, dan tombol chat setelah klaim diterima.
 - Report submission form.
 - Authentication.
 - Admin dashboard.
@@ -76,6 +77,16 @@ PATCH /admin/users/{user_uuid}/block?current_user_id={admin_uuid}
 ```
 
 `current_user_id` harus mengarah ke user yang ada di database dan belum diblokir.
+
+## Verifikasi Email
+
+Pendaftaran hanya menerima email dengan domain `@apps.ipb.ac.id`. Akun baru dibuat dengan status `nonaktif`, lalu backend mengirim link verifikasi:
+
+```text
+GET /auth/verify-email?token=...
+```
+
+Untuk email sungguhan, isi konfigurasi SMTP di `.env`. Kalau SMTP belum diisi, link verifikasi akan muncul di response register dan log backend agar tetap mudah dites lokal.
 
 ## Realtime Chat E2EE
 

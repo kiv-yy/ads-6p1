@@ -6,6 +6,7 @@ from fastapi import WebSocket
 from app import schemas
 from app.models import Chat, ChatMessage, Claim
 from app.services.base import BaseRepository
+from app.services.notifications import NotificationRepository
 
 
 class ChatRepository(BaseRepository):
@@ -48,7 +49,21 @@ class ChatRepository(BaseRepository):
             content=message_in.ciphertext or message_in.content,
             image_attachment=str(message_in.image_attachment) if message_in.image_attachment else None,
         )
-        return self.save(message)
+        saved_message = self.save(message)
+        receiver_id = claim.item.owner_id if sender_id == claim.claimant_id else claim.claimant_id
+        notifications = NotificationRepository(self.db)
+        notifications.delete_chat_notification_for_claim(user_id=receiver_id, claim_id=claim.id)
+        notifications.create(
+            user_id=receiver_id,
+            actor_id=sender_id,
+            type="chat_new",
+            title="Pesan baru",
+            message=f"Pesan baru terkait {claim.item.title}.",
+            target_url=f"/messages/{claim.id}",
+            item_id=claim.item_id,
+            claim_id=claim.id,
+        )
+        return saved_message
 
 
 class ChatConnectionManager:

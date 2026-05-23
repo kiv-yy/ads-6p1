@@ -6,6 +6,7 @@ from app import schemas
 from app.models import Claim, ClaimStatus, Item, ItemStatus, User
 from app.services.base import BaseRepository
 from app.services.chat import ChatRepository
+from app.services.notifications import NotificationRepository
 
 
 class ClaimRepository(BaseRepository):
@@ -17,7 +18,18 @@ class ClaimRepository(BaseRepository):
             message=claim_in.message or "",
             proof_image_url=str(claim_in.proof_image_url) if claim_in.proof_image_url else None,
         )
-        return self.save(claim)
+        saved_claim = self.save(claim)
+        NotificationRepository(self.db).create(
+            user_id=saved_claim.item.owner_id,
+            actor_id=claimant.id,
+            type="claim_new",
+            title="Klaim baru",
+            message=f"{claimant.full_name} mengajukan klaim untuk {saved_claim.item.title}.",
+            target_url=f"/items/{saved_claim.item_id}",
+            item_id=saved_claim.item_id,
+            claim_id=saved_claim.id,
+        )
+        return saved_claim
 
     def get(self, claim_id: UUID) -> Claim | None:
         return self.db.get(Claim, claim_id)
@@ -60,7 +72,20 @@ class ClaimRepository(BaseRepository):
             ChatRepository(self.db).get_or_create_for_claim(claim)
         elif status == ClaimStatus.REJECTED and not self._has_accepted_claim(claim.item_id):
             claim.item.status = ItemStatus.OPEN.value
-        return self.save(claim)
+        saved_claim = self.save(claim)
+        title = "Klaim diterima" if status == ClaimStatus.ACCEPTED else "Klaim ditolak"
+        target_url = f"/messages/{saved_claim.id}" if status == ClaimStatus.ACCEPTED else f"/items/{saved_claim.item_id}"
+        NotificationRepository(self.db).create(
+            user_id=saved_claim.claimant_id,
+            actor_id=saved_claim.item.owner_id,
+            type="claim_status",
+            title=title,
+            message=f"{title} untuk {saved_claim.item.title}.",
+            target_url=target_url,
+            item_id=saved_claim.item_id,
+            claim_id=saved_claim.id,
+        )
+        return saved_claim
 
     def _has_accepted_claim(self, item_id: UUID) -> bool:
         return self.db.query(Claim).filter(Claim.item_id == item_id, Claim.status == ClaimStatus.ACCEPTED.value).first() is not None

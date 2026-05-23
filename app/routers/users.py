@@ -10,6 +10,7 @@ from app.core.security import AuthService, create_access_token
 from app.db.database import get_db
 from app.dependencies import ApiError, get_dev_current_user
 from app.models import AccountStatus, User
+from app.services.email_verification import EmailVerificationRepository
 from app.services.user_service import UserRepository
 
 
@@ -17,14 +18,20 @@ router = APIRouter(tags=["Users"])
 settings = get_settings()
 
 
-@router.post("/auth/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
-def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)) -> User:
+@router.post("/auth/register", response_model=schemas.RegisterResponse, status_code=status.HTTP_201_CREATED)
+def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)) -> schemas.RegisterResponse:
     users = UserRepository(db)
     if users.get_by_email(user_in.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     if users.get_by_nim(user_in.nim):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="NIM already registered")
-    return users.create(user_in)
+    user = users.create(user_in)
+    verification_url = EmailVerificationRepository(db).create_and_send(user)
+    return schemas.RegisterResponse(
+        user=user,
+        message="Pendaftaran berhasil. Silakan verifikasi email @apps.ipb.ac.id sebelum login.",
+        verification_url=verification_url,
+    )
 
 
 @router.post("/auth/login", response_model=schemas.Token, tags=["Auth"])
@@ -41,10 +48,40 @@ def login(
         )
     if user.account_status == AccountStatus.BANNED.value:
         raise ApiError.forbidden("User is blocked")
+    if user.account_status != AccountStatus.ACTIVE.value:
+        raise ApiError.forbidden("Email belum diverifikasi. Silakan cek email IPB kamu.")
 
     expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(subject=str(user.id), expires_delta=expires_delta)
     return schemas.Token(access_token=access_token)
+
+
+@router.get("/auth/verify-email", response_model=schemas.VerifyEmailResponse, tags=["Auth"])
+def verify_email(token: str, db: Session = Depends(get_db)) -> schemas.VerifyEmailResponse:
+    user = EmailVerificationRepository(db).verify(token)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token verifikasi tidak valid atau sudah kedaluwarsa")
+    return schemas.VerifyEmailResponse(message="Email berhasil diverifikasi. Kamu sudah bisa login.", user=user)
+
+
+@router.post("/auth/resend-verification", response_model=schemas.RegisterResponse, tags=["Auth"])
+def resend_verification(
+    payload: schemas.ResendVerificationRequest,
+    db: Session = Depends(get_db),
+) -> schemas.RegisterResponse:
+    user = UserRepository(db).get_by_email(str(payload.email))
+    if not user:
+        raise ApiError.not_found("User")
+    if user.account_status == AccountStatus.ACTIVE.value:
+        return schemas.RegisterResponse(user=user, message="Email sudah diverifikasi.", verification_url=None)
+    if user.account_status == AccountStatus.BANNED.value:
+        raise ApiError.forbidden("User is blocked")
+    verification_url = EmailVerificationRepository(db).create_and_send(user)
+    return schemas.RegisterResponse(
+        user=user,
+        message="Link verifikasi baru sudah dikirim.",
+        verification_url=verification_url,
+    )
 
 
 @router.get("/users/me", response_model=schemas.UserRead)

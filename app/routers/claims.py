@@ -26,10 +26,8 @@ def create_claim(
         raise ApiError.not_found("Item")
     if item.owner_id == current_user.id:
         raise ApiError.bad_request("You cannot claim your own item")
-    if item.type != ItemType.FOUND.value:
-        raise ApiError.bad_request("Only found items can be claimed")
     if item.status != ItemStatus.OPEN.value:
-        raise ApiError.bad_request("Only active found items can be claimed")
+        raise ApiError.bad_request("Only active items can be claimed")
     claims = ClaimRepository(db)
     if claims.get_active_for_item_and_claimant(item.id, current_user.id):
         raise ApiError.bad_request("You already have an active claim for this item")

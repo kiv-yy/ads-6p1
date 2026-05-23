@@ -10,8 +10,19 @@ from app.schemas.post import (
     normalize_item_status,
     normalize_item_type,
 )
+from app.schemas.notification import NotificationRead, NotificationSummary
 from app.schemas.report import ReportCreate, ReportRead, ReportUpdate
-from app.schemas.user import AdminStats, Token, TokenData, UserCreate, UserModerationUpdate, UserRead
+from app.schemas.user import (
+    AdminStats,
+    RegisterResponse,
+    ResendVerificationRequest,
+    Token,
+    TokenData,
+    UserCreate,
+    UserModerationUpdate,
+    UserRead,
+    VerifyEmailResponse,
+)
 
 __all__ = [
     "AdminStats",
@@ -26,8 +37,12 @@ __all__ = [
     "ItemCreate",
     "ItemRead",
     "ItemUpdate",
+    "NotificationRead",
+    "NotificationSummary",
     "PostImageCreate",
     "PostImageRead",
+    "RegisterResponse",
+    "ResendVerificationRequest",
     "ReportCreate",
     "ReportRead",
     "ReportUpdate",
@@ -36,6 +51,7 @@ __all__ = [
     "UserCreate",
     "UserModerationUpdate",
     "UserRead",
+    "VerifyEmailResponse",
     "normalize_item_status",
     "normalize_item_type",
 ]

@@ -35,6 +35,7 @@ class UserRepository(BaseRepository):
             faculty=user_in.faculty,
             nim=user_in.nim,
             hashed_password=self.password_service.hash(user_in.password),
+            account_status=AccountStatus.INACTIVE.value,
         )
         return self.save(user)
 
