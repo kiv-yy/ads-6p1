@@ -1,22 +1,11 @@
 import { useState, useEffect } from 'react';
 import { MapPin } from "lucide-react";
 import { Link } from 'react-router-dom';
-import { Plus, Search, ChevronRight, Laptop, Briefcase, Key, Package, CreditCard, Book, Watch, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, ChevronRight, Package } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Badge } from '../components/UI';
 import api from '../api/axios';
 import { itemTypeLabel, itemTypeVariant } from '../utils/itemType';
-
-const CATEGORIES = [
-  { name: 'Elektronik', icon: Laptop },
-  { name: 'Dompet', icon: Briefcase },
-  { name: 'Kunci', icon: Key },
-  { name: 'Tas', icon: Package },
-  { name: 'Kartu', icon: CreditCard },
-  { name: 'Buku', icon: Book },
-  { name: 'Aksesoris', icon: Watch },
-  { name: 'Lainnya', icon: MoreHorizontal },
-];
 
 export default function Home() {
   const { user } = useAuth();
@@ -125,25 +114,6 @@ export default function Home() {
               Belum ada laporan terbaru
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="space-y-6 pt-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-8 border-l-4 border-ipb-green pl-4">Kategori Populer</h3>
-        <div className="grid grid-cols-4 lg:grid-cols-8 gap-6 md:gap-8">
-          {CATEGORIES.map((cat) => (
-            <Link 
-              key={cat.name} 
-              to={`/items?category=${cat.name}`}
-              className="flex flex-col items-center gap-4 group"
-            >
-              <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-soft border border-gray-50 group-hover:bg-ipb-green group-hover:text-white transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2 group-hover:shadow-[0_10px_30px_-5px_rgba(0,107,63,0.4)]">
-                <cat.icon size={26} className="text-gray-400 group-hover:text-white transition-all duration-300" />
-              </div>
-              <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-ipb-green transition-colors">{cat.name}</span>
-            </Link>
-          ))}
         </div>
       </section>
     </div>

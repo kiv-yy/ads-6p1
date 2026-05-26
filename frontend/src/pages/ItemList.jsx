@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, Filter, Package, Calendar, MapPin, ChevronRight, Laptop, Briefcase, Key, CreditCard, Book, Watch, MoreHorizontal } from 'lucide-react';
+import { Search, Filter, Package, Calendar, MapPin } from 'lucide-react';
 import api from '../api/axios';
-import { Input, Button, Card, Badge } from '../components/UI';
+import { Button, Card, Badge } from '../components/UI';
 import { cn } from '../utils/cn';
 import { itemTypeLabel, itemTypeVariant } from '../utils/itemType';
 
@@ -13,6 +13,7 @@ export default function ItemList() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [showFilters, setShowFilters] = useState(false);
   
   const activeTab = searchParams.get('type') || 'LOST';
   const activeCategory = searchParams.get('category') || 'Semua';
@@ -75,13 +76,53 @@ export default function ItemList() {
             <input
               type="text"
               placeholder="Cari barang..."
-              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-ipb-green/20 outline-none"
+              className="w-full pl-12 pr-14 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-ipb-green/20 outline-none"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setShowFilters((value) => !value)}
+              className={cn(
+                "absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-colors",
+                showFilters || activeCategory !== 'Semua' ? "bg-ipb-green text-white" : "text-gray-500 hover:bg-gray-100"
+              )}
+              aria-label="Buka filter"
+            >
+              <Filter size={18} />
+            </button>
           </div>
           <Button type="submit" variant="primary" className="px-6 rounded-2xl">Cari</Button>
         </form>
+
+        {showFilters && (
+          <Card className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-gray-800">Filter kategori</p>
+              {activeCategory !== 'Semua' && (
+                <button onClick={() => setCategory('Semua')} className="text-xs font-bold text-ipb-green">
+                  Reset
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-sm font-medium transition-all border",
+                    activeCategory === cat
+                      ? "bg-ipb-green text-white border-ipb-green"
+                      : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <button
@@ -103,27 +144,6 @@ export default function ItemList() {
             Barang Ditemukan
           </button>
         </div>
-      </div>
-
-      {/* Categories Filter */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={cn(
-              "whitespace-nowrap px-6 py-2 rounded-xl text-sm font-medium transition-all border",
-              activeCategory === cat 
-                ? "bg-ipb-green text-white border-ipb-green" 
-                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-            )}
-          >
-            {cat}
-          </button>
-        ))}
-        <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 ml-auto">
-          <Filter size={20} />
-        </button>
       </div>
 
       <p className="text-sm text-gray-500">Menampilkan {items.length} hasil</p>

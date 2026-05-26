@@ -1,17 +1,26 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home as HomeIcon, Search, PlusCircle, MessageCircle, User, Bell, LayoutDashboard } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Home as HomeIcon, Search, PlusCircle, MessageCircle, Bell, LayoutDashboard } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../utils/cn";
+import api from "../api/axios";
 
 export const Sidebar = () => {
   const { pathname } = useLocation();
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get('/notifications/summary')
+      .then((response) => setUnreadCount(response.data.unread_count || 0))
+      .catch(() => setUnreadCount(0));
+  }, [user, pathname]);
   
   const menuItems = [
     { label: "Home", icon: HomeIcon, path: "/" },
     { label: "Cari", icon: Search, path: "/items" },
     { label: "Notifikasi", icon: Bell, path: "/notifications" },
-    { label: "Profil", icon: User, path: "/profile" },
     { label: "Buat Laporan", icon: PlusCircle, path: "/report" },
     { label: "Chat", icon: MessageCircle, path: "/messages" },
   ];
@@ -21,12 +30,12 @@ export const Sidebar = () => {
   }
 
   return (
-    <div className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 min-h-screen fixed left-0 top-0 pt-8 pb-4">
+    <div className="hidden lg:flex flex-col w-64 bg-ipb-green border-r border-ipb-green-dark/20 min-h-screen fixed left-0 top-0 pt-8 pb-4">
       <div className="px-8 mb-8 flex items-center gap-3">
-        <div className="w-10 h-10 bg-ipb-green rounded-xl flex items-center justify-center text-white font-bold text-xl">L</div>
+        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-ipb-green font-bold text-xl">L</div>
         <div className="leading-tight">
-          <h1 className="font-bold text-gray-800 text-lg tracking-tight">Lost&Found</h1>
-          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">IPB University</p>
+          <h1 className="font-bold text-white text-lg tracking-tight">Lost&Found</h1>
+          <p className="text-[10px] uppercase tracking-widest text-white/60 font-semibold">IPB University</p>
         </div>
       </div>
 
@@ -37,27 +46,34 @@ export const Sidebar = () => {
             to={item.path}
             className={cn(
               "flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-medium transition-all duration-300",
-              pathname === item.path 
-                ? "active-nav" 
-                : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+              pathname === item.path
+                ? "bg-white text-ipb-green shadow-lg shadow-ipb-green-dark/20"
+                : "text-white/75 hover:bg-white/10 hover:text-white"
             )}
           >
-            <item.icon size={20} className={cn(pathname === item.path ? "text-ipb-green" : "text-gray-400")} />
+            <div className="relative">
+              <item.icon size={20} className={cn(pathname === item.path ? "text-ipb-green" : "text-white/70")} />
+              {item.path === '/notifications' && unreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
             {item.label}
           </Link>
         ))}
       </nav>
 
       <div className="p-4 mt-auto">
-        <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3 border border-gray-100">
-          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">
+        <Link to="/profile" className="bg-white/12 hover:bg-white/20 rounded-2xl p-4 flex items-center gap-3 border border-white/15 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-ipb-green font-bold">
             {user?.full_name?.charAt(0) || "U"}
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-semibold text-gray-800 truncate">{user?.full_name || "Guest"}</p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">{user?.faculty || "IPB"}</p>
+            <p className="text-sm font-semibold text-white truncate">{user?.full_name || "Guest"}</p>
+            <p className="text-[10px] text-white/55 uppercase tracking-wider font-bold">{user?.faculty || "IPB"}</p>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );
@@ -66,13 +82,21 @@ export const Sidebar = () => {
 export const BottomNav = () => {
   const { pathname } = useLocation();
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get('/notifications/summary')
+      .then((response) => setUnreadCount(response.data.unread_count || 0))
+      .catch(() => setUnreadCount(0));
+  }, [user, pathname]);
   
   const items = [
     { icon: HomeIcon, path: "/" },
     { icon: Search, path: "/items" },
+    { icon: Bell, path: "/notifications" },
     { icon: PlusCircle, path: "/report" },
     { icon: MessageCircle, path: "/messages" },
-    { icon: User, path: "/profile" },
   ];
 
   return (
@@ -86,7 +110,14 @@ export const BottomNav = () => {
             pathname === item.path ? "text-ipb-green" : "text-gray-400"
           )}
         >
-          <item.icon size={24} strokeWidth={pathname === item.path ? 2.5 : 2} />
+          <div className="relative">
+            <item.icon size={24} strokeWidth={pathname === item.path ? 2.5 : 2} />
+            {item.path === '/notifications' && unreadCount > 0 && (
+              <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </div>
         </Link>
       ))}
     </div>

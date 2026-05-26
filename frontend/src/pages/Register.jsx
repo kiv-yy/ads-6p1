@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Input } from '../components/UI';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export default function Register() {
   const { register } = useAuth();
@@ -14,17 +15,30 @@ export default function Register() {
     nim: '',
   });
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.email.toLowerCase().endsWith('@apps.ipb.ac.id')) {
+      setEmailError('Hanya untuk email IPB dengan domain @apps.ipb.ac.id.');
+      return;
+    }
     setLoading(true);
     setError('');
+    setEmailError('');
+    setSuccess(null);
     try {
-      await register(formData);
-      navigate('/login');
+      const result = await register(formData);
+      setSuccess(result);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Gagal mendaftar. Silakan coba lagi.');
+      const message = getApiErrorMessage(err, 'Gagal mendaftar. Silakan coba lagi.');
+      if (message.toLowerCase().includes('email') && message.toLowerCase().includes('ipb')) {
+        setEmailError('Hanya untuk email IPB dengan domain @apps.ipb.ac.id.');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -38,6 +52,22 @@ export default function Register() {
           <p className="text-gray-500">Lengkapi data diri Anda sebagai civitas IPB</p>
         </div>
 
+        {success ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-green-100 bg-green-50 p-5 text-sm text-green-700">
+              <p className="font-bold text-green-800 mb-1">Pendaftaran berhasil.</p>
+              <p>{success.message}</p>
+            </div>
+            {success.verification_url && (
+              <a href={success.verification_url} className="block">
+                <Button className="w-full py-3">Verifikasi Email Sekarang</Button>
+              </a>
+            )}
+            <Link to="/login" className="block text-center text-sm font-bold text-ipb-green hover:underline">
+              Kembali ke halaman login
+            </Link>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <Input 
@@ -66,9 +96,14 @@ export default function Register() {
               type="email" 
               placeholder="nama@apps.ipb.ac.id" 
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => {
+                setFormData({...formData, email: e.target.value});
+                setEmailError('');
+              }}
+              error={emailError}
               required
             />
+            {!emailError && <p className="text-xs text-gray-400 ml-1 mt-2">Hanya untuk email IPB: @apps.ipb.ac.id</p>}
           </div>
           <div className="md:col-span-2">
             <Input 
@@ -87,6 +122,7 @@ export default function Register() {
             {loading ? 'Memproses...' : 'Daftar Sekarang'}
           </Button>
         </form>
+        )}
 
         <div className="text-center text-sm text-gray-600">
           Sudah punya akun?{' '}

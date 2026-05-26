@@ -1,0 +1,9 @@
+frontend/
+.git/
+.env
+*.db
+*.sqlite
+*.sqlite3
+*.log
+app/static/uploads/
+__pycache__/

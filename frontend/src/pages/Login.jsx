@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Input } from '../components/UI';
 import { LogIn } from 'lucide-react';
+import api from '../api/axios';
 
 export default function Login() {
   const { login } = useAuth();
@@ -10,20 +11,41 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+  const [canResendVerification, setCanResendVerification] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setInfo('');
+    setCanResendVerification(false);
     try {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError('Email atau password salah. Silakan coba lagi.');
+      const message = err.response?.data?.detail || 'Email atau password salah. Silakan coba lagi.';
+      setError(message);
+      setCanResendVerification(typeof message === 'string' && message.toLowerCase().includes('belum diverifikasi'));
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResending(true);
+    setError('');
+    try {
+      const response = await api.post('/auth/resend-verification', { email });
+      setInfo(response.data.message);
+      setCanResendVerification(false);
+    } catch (requestError) {
+      setError(requestError.response?.data?.detail || 'Gagal mengirim ulang email verifikasi.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -55,11 +77,17 @@ export default function Login() {
               required
             />
             <div className="text-right">
-              <button type="button" className="text-xs text-ipb-green font-semibold hover:underline">Lupa password?</button>
+              <Link to="/forgot-password" className="text-xs text-ipb-green font-semibold hover:underline">Lupa password?</Link>
             </div>
           </div>
 
           {error && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
+          {canResendVerification && (
+            <Button type="button" variant="secondary" className="w-full py-3" onClick={handleResendVerification} disabled={resending}>
+              {resending ? 'Mengirim...' : 'Kirim Ulang Email Verifikasi'}
+            </Button>
+          )}
+          {info && <p className="text-sm text-green-700 bg-green-50 p-3 rounded-lg border border-green-100">{info}</p>}
 
           <Button type="submit" className="w-full py-3" disabled={loading}>
             {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Masuk'}

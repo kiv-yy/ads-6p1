@@ -14,6 +14,9 @@ from app.schemas.notification import NotificationRead, NotificationSummary
 from app.schemas.report import ReportCreate, ReportRead, ReportUpdate
 from app.schemas.user import (
     AdminStats,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    PasswordResetResponse,
     RegisterResponse,
     ResendVerificationRequest,
     Token,
@@ -39,6 +42,9 @@ __all__ = [
     "ItemUpdate",
     "NotificationRead",
     "NotificationSummary",
+    "PasswordResetConfirm",
+    "PasswordResetRequest",
+    "PasswordResetResponse",
     "PostImageCreate",
     "PostImageRead",
     "RegisterResponse",

@@ -74,6 +74,22 @@ COMMENT ON COLUMN email_verifications.token_hash  IS 'SHA-256 hash dari token ve
 
 
 
+-- TABEL PASSWORD_RESET_TOKENS
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    reset_id        UUID         PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID         NOT NULL
+                    REFERENCES users(user_id) ON DELETE CASCADE,
+    token_hash      VARCHAR(128) NOT NULL UNIQUE,
+    expires_at      TIMESTAMP    NOT NULL,
+    used_at         TIMESTAMP,
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE password_reset_tokens IS 'Token sementara untuk mengubah password akun';
+
+
+
 -- TABEL NOTIFICATIONS
 
 CREATE TABLE IF NOT EXISTS notifications (
@@ -297,6 +313,10 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_sent_at    ON chat_messages(sent_at
 -- email_verifications
 CREATE INDEX IF NOT EXISTS idx_email_verifications_user_id      ON email_verifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_email_verifications_token_hash   ON email_verifications(token_hash);
+
+-- password_reset_tokens
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id      ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token_hash   ON password_reset_tokens(token_hash);
 
 -- notifications
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id      ON notifications(user_id);
