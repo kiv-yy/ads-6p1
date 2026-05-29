@@ -6,7 +6,7 @@ import { Button, Card, Badge } from '../components/UI';
 import { cn } from '../utils/cn';
 import { itemTypeLabel, itemTypeVariant } from '../utils/itemType';
 
-const CATEGORIES = ['Semua', 'Elektronik', 'Dompet/Tas', 'Kunci', 'Kartu', 'Buku', 'Lainnya'];
+const CATEGORIES = ['Semua', 'Elektronik', 'Dompet / Tas', 'Kartu Identitas', 'Kunci', 'Pakaian', 'Lainnya'];
 
 export default function ItemList() {
   const [searchParams, setSearchParams] = useSearchParams();

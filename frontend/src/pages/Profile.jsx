@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { LogOut, Package, ShieldCheck, Mail, MapPin, User as UserIcon, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
@@ -89,36 +90,57 @@ export default function Profile() {
           {loading ? (
             Array(2).fill(0).map((_, i) => <Card key={i} className="h-40 animate-pulse bg-gray-100" />)
           ) : data.length > 0 ? (
-            data.map((item) => (
-              <Card key={item.id} className="p-5 flex gap-4 group hover:shadow-md transition-all">
-                <div className="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
-                  {item.image || item.item?.image ? (
-                    <img src={item.image || item.item?.image} className="w-full h-full object-cover" />
-                  ) : (
-                    <Package size={24} className="text-gray-300" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-gray-900 truncate">{activeTab === 'reports' ? item.name : item.item?.name}</h3>
-                    <Badge variant={(item.type || item.item?.type)?.toLowerCase()}>
-                      {item.type || item.item?.type}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                    <MapPin size={10} /> {activeTab === 'reports' ? item.location : item.item?.location}
-                  </p>
-                  <div className="flex justify-between items-center pt-2">
-                    <p className="text-[10px] text-gray-400">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                    <button className="text-gray-400 hover:text-red-500 transition-colors">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </Card>
-            ))
+            data.map((item) => {
+              const itemId = activeTab === 'reports' ? item.id : (item.item_id || item.item?.id);
+              const itemStatus = activeTab === 'reports' ? item.status : (item.item?.status || 'aktif');
+              const isResolved = itemStatus === 'selesai';
+
+              return (
+                <Link key={item.id} to={`/items/${itemId}`} className="block">
+                  <Card className="p-5 flex gap-4 group hover:shadow-md hover:border-ipb-green/20 transition-all cursor-pointer h-full">
+                    <div className="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
+                      {item.image || item.item?.image ? (
+                        <img src={item.image || item.item?.image} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package size={24} className="text-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex justify-between items-start gap-2">
+                        <h3 className="font-bold text-gray-900 truncate group-hover:text-ipb-green transition-colors text-sm sm:text-base">
+                          {activeTab === 'reports' ? item.name : item.item?.name}
+                        </h3>
+                        <div className="flex flex-col gap-1 items-end shrink-0">
+                          <Badge variant={(item.type || item.item?.type)?.toLowerCase()}>
+                            {item.type || item.item?.type}
+                          </Badge>
+                          <Badge variant={isResolved ? 'success' : 'warning'}>
+                            {isResolved ? 'Selesai' : 'Aktif'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                        <MapPin size={10} /> {activeTab === 'reports' ? item.location : item.item?.location}
+                      </p>
+                      <div className="flex justify-between items-center pt-2">
+                        <p className="text-[10px] text-gray-400">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </p>
+                        <button 
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })
           ) : (
             <div className="col-span-full py-16 text-center text-gray-400 border-2 border-dashed border-gray-100 rounded-3xl">
               Belum ada data tersedia

@@ -86,6 +86,7 @@ Pendaftaran hanya menerima email dengan domain `@apps.ipb.ac.id`. Akun baru dibu
 GET /auth/verify-email?token=...
 ```
 
+Untuk email sungguhan, isi konfigurasi SMTP di `.env`. 
 Untuk email sungguhan di Railway, gunakan Resend melalui HTTPS API karena SMTP diblokir pada plan Railway non-Pro:
 
 ```env

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app import schemas
 from app.db.database import get_db
-from app.dependencies import ApiError, get_dev_current_user
+from app.dependencies import ApiError, get_dev_current_user, get_optional_current_user
 from app.models import Item, ItemStatus, ItemType, User
 from app.services.authorization import AuthorizationPolicy
 from app.services.posts import ItemRepository
@@ -58,6 +58,7 @@ def list_items(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
 ) -> list[Item]:
     return ItemRepository(db).list(
         category=category,
@@ -67,6 +68,7 @@ def list_items(
         keyword=keyword or q,
         skip=skip,
         limit=limit,
+        current_user=current_user,
     )
 
 

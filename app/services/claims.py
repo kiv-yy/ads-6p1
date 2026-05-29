@@ -17,15 +17,23 @@ class ClaimRepository(BaseRepository):
             claimant_name=claim_in.claimant_name or claimant.full_name,
             message=claim_in.message or "",
             proof_image_url=str(claim_in.proof_image_url) if claim_in.proof_image_url else None,
+            status=ClaimStatus.ACCEPTED.value,  # Set directly to accepted
         )
         saved_claim = self.save(claim)
+        # Flag item status to in progress
+        saved_claim.item.status = ItemStatus.IN_PROGRESS.value
+        
+        # Instantiate/get the Chat room session immediately
+        ChatRepository(self.db).get_or_create_for_claim(saved_claim)
+
+        # Send notification to item owner that someone has initiated contact and chat is open
         NotificationRepository(self.db).create(
             user_id=saved_claim.item.owner_id,
             actor_id=claimant.id,
-            type="claim_new",
-            title="Klaim baru",
-            message=f"{claimant.full_name} mengajukan klaim untuk {saved_claim.item.title}.",
-            target_url=f"/items/{saved_claim.item_id}",
+            type="claim_status",
+            title="Sesi chat baru",
+            message=f"{claimant.full_name} memulai chat untuk {saved_claim.item.title}.",
+            target_url=f"/messages/{saved_claim.id}",
             item_id=saved_claim.item_id,
             claim_id=saved_claim.id,
         )

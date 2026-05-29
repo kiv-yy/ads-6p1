@@ -317,7 +317,6 @@ CREATE INDEX IF NOT EXISTS idx_email_verifications_token_hash   ON email_verific
 -- password_reset_tokens
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id      ON password_reset_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token_hash   ON password_reset_tokens(token_hash);
-
 -- notifications
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id      ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read      ON notifications(is_read);

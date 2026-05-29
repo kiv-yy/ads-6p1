@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import or_
 
 from app import schemas
-from app.models import Category, Item, ItemStatus, ItemType, PostImage
+from app.models import Category, Item, ItemStatus, ItemType, PostImage, User, UserRole
 from app.services.base import BaseRepository
 from app.services.categories import CategoryRepository
 
@@ -45,16 +45,48 @@ class ItemRepository(BaseRepository):
         keyword: str | None = None,
         skip: int = 0,
         limit: int = 20,
+        current_user: User | None = None,
     ) -> list[Item]:
         query = self.db.query(Item).join(Category)
+        
+        # Enforce resolved visibility constraints based on role and ownership
+        if current_user and current_user.role == UserRole.ADMIN.value:
+            # Admins see everything based on requested status
+            if status:
+                query = query.filter(Item.status == status.value)
+            else:
+                query = query.filter(Item.status != ItemStatus.DELETED.value)
+        elif current_user:
+            # Authenticated users see active items, OR their own resolved items
+            if status:
+                if status == ItemStatus.RESOLVED:
+                    # Only see their own resolved items
+                    query = query.filter(Item.status == ItemStatus.RESOLVED.value, Item.owner_id == current_user.id)
+                else:
+                    query = query.filter(Item.status == status.value)
+            else:
+                # Default listing (no status specified)
+                # Show active items OR user's own non-deleted items
+                query = query.filter(
+                    or_(
+                        Item.status == ItemStatus.OPEN.value,
+                        Item.owner_id == current_user.id
+                    )
+                ).filter(Item.status != ItemStatus.DELETED.value)
+        else:
+            # Unauthenticated users only see active (OPEN) items
+            if status:
+                if status == ItemStatus.RESOLVED:
+                    query = query.filter(Item.status == "impossible-status-to-hide")
+                else:
+                    query = query.filter(Item.status == status.value)
+            else:
+                query = query.filter(Item.status == ItemStatus.OPEN.value)
+
         if category:
             query = query.filter(Category.name.ilike(f"%{category}%"))
         if item_type:
             query = query.filter(Item.type == item_type.value)
-        if status:
-            query = query.filter(Item.status == status.value)
-        else:
-            query = query.filter(Item.status != ItemStatus.DELETED.value)
         if location:
             query = query.filter(Item.location.ilike(f"%{location}%"))
         if keyword:

@@ -40,6 +40,23 @@ def get_current_or_dev_user(
     return user
 
 
+def get_optional_current_user(
+    token: str | None = Depends(oauth2_scheme),
+    current_user_id: UUID | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> User | None:
+    try:
+        if token:
+            return AuthService(db).get_current_user(token)
+        if current_user_id is not None:
+            user = db.get(User, current_user_id)
+            if user and user.account_status == AccountStatus.ACTIVE.value:
+                return user
+    except Exception:
+        pass
+    return None
+
+
 def get_dev_current_user(current_user: User = Depends(get_current_or_dev_user)) -> User:
     return current_user
 

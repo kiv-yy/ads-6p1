@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app import schemas
 from app.db.database import get_db
 from app.dependencies import ApiError, get_dev_current_user
-from app.models import Claim, ItemStatus, ItemType, User, UserRole
+from app.models import Claim, ClaimStatus, ItemStatus, ItemType, User, UserRole
 from app.services.authorization import AuthorizationPolicy
 from app.services.claims import ClaimRepository
 from app.services.posts import ItemRepository
@@ -88,5 +88,10 @@ def update_claim_status(
     if not claim:
         raise ApiError.not_found("Claim")
     if not AuthorizationPolicy.can_moderate_claim(claim, current_user):
-        raise ApiError.forbidden("Only item owner can moderate claims")
+        raise ApiError.forbidden("Only item owner, admin, or the claimant can cancel claims")
+        
+    # Security constraint: Claimant can ONLY reject/cancel, not accept!
+    if current_user.id == claim.claimant_id and claim_in.status != ClaimStatus.REJECTED:
+        raise ApiError.forbidden("Claimant can only cancel/reject their own claim")
+        
     return claims.update_status(claim, claim_in.status)

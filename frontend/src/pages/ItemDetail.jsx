@@ -96,6 +96,21 @@ export default function ItemDetail() {
     }
   };
 
+  const handleResolveItem = async () => {
+    setActionLoading(true);
+    setError('');
+    setNotice('');
+    try {
+      const response = await api.patch(`/items/${item.id}/resolve`);
+      setItem(response.data);
+      setNotice('Laporan berhasil ditutup dan diselesaikan.');
+      await fetchClaims(response.data);
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Gagal menutup laporan.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
   const getClaimStatusLabel = (status) => ({
     pending: 'Menunggu',
     diterima: 'Diterima',
@@ -135,10 +150,13 @@ export default function ItemDetail() {
                   <Package size={80} />
                 </div>
               )}
-              <div className="absolute top-6 left-6">
+              <div className="absolute top-6 left-6 flex gap-2">
                 <Badge variant={itemTypeVariant(item.type)}>
                   {itemTypeLabel(item.type)}
                 </Badge>
+                {item.status === 'selesai' && (
+                  <Badge variant="success">Selesai</Badge>
+                )}
               </div>
             </div>
             <div className="p-6 md:p-8 space-y-6">
@@ -231,7 +249,12 @@ export default function ItemDetail() {
           <div className="flex flex-col gap-3">
             {!isOwner ? (
               <>
-                {myClaim ? (
+                {item.status === 'selesai' ? (
+                  <Card className="p-5 bg-green-50/50 border-green-100 border text-center space-y-2">
+                    <p className="font-bold text-green-800 text-sm">Laporan Selesai</p>
+                    <p className="text-xs text-green-700">Laporan ini telah diselesaikan dan barang telah berhasil dikembalikan.</p>
+                  </Card>
+                ) : myClaim ? (
                   <Card className="p-5 space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -243,6 +266,18 @@ export default function ItemDetail() {
                       </Badge>
                     </div>
                     {myClaim.message && <p className="text-sm text-gray-600">{myClaim.message}</p>}
+                    {myClaim.status !== 'ditolak' && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleUpdateClaim(myClaim.id, 'ditolak')}
+                        disabled={claimLoading}
+                        className="w-full mt-2 text-xs rounded-xl"
+                      >
+                        Batalkan Klaim / Hubungi
+                      </Button>
+                    )}
                   </Card>
                 ) : (
                   <Card className="p-5 space-y-4">
@@ -280,64 +315,90 @@ export default function ItemDetail() {
               </>
             ) : (
               <>
-                <Card className="p-5 space-y-4">
-                  <div>
-                    <h3 className="font-bold text-gray-900">Klaim Masuk</h3>
-                    <p className="text-sm text-gray-500 mt-1">Terima klaim untuk membuka chat dengan pengaju.</p>
-                  </div>
-                  {claims.length > 0 ? (
-                    <div className="space-y-3">
-                      {claims.map((claim) => (
-                        <div key={claim.id} className="rounded-2xl border border-gray-100 p-4 space-y-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="font-bold text-sm text-gray-900">{claim.claim_user?.full_name || claim.claimant_name}</p>
-                              <p className="text-xs text-gray-500">{claim.claim_user?.email || 'Pengaju klaim'}</p>
+                {item.status === 'selesai' ? (
+                  <Card className="p-5 bg-green-50/50 border-green-100 border text-center space-y-2">
+                    <p className="font-bold text-green-800 text-sm">Laporan Selesai</p>
+                    <p className="text-xs text-green-700">Kamu telah menyelesaikan laporan ini. Terima kasih atas partisipasimu!</p>
+                  </Card>
+                ) : (
+                  <>
+                    <Card className="p-5 space-y-4">
+                      <div>
+                        <h3 className="font-bold text-gray-900">Klaim Masuk</h3>
+                        <p className="text-sm text-gray-500 mt-1">Terima klaim untuk membuka chat dengan pengaju.</p>
+                      </div>
+                      {claims.length > 0 ? (
+                        <div className="space-y-3">
+                          {claims.map((claim) => (
+                            <div key={claim.id} className="rounded-2xl border border-gray-100 p-4 space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-bold text-sm text-gray-900">{claim.claim_user?.full_name || claim.claimant_name}</p>
+                                  <p className="text-xs text-gray-500">{claim.claim_user?.email || 'Pengaju klaim'}</p>
+                                </div>
+                                <Badge variant={getClaimStatusVariant(claim.status)}>
+                                  {getClaimStatusLabel(claim.status)}
+                                </Badge>
+                              </div>
+                              {claim.message && <p className="text-sm text-gray-600">{claim.message}</p>}
+                              {claim.status === 'pending' ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => handleUpdateClaim(claim.id, 'diterima')}
+                                    disabled={claimLoading}
+                                    className="rounded-xl"
+                                  >
+                                    <Check size={16} /> Terima
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="danger"
+                                    onClick={() => handleUpdateClaim(claim.id, 'ditolak')}
+                                    disabled={claimLoading}
+                                    className="rounded-xl"
+                                  >
+                                    <X size={16} /> Tolak
+                                  </Button>
+                                </div>
+                              ) : claim.status === 'diterima' ? (
+                                <div className="space-y-2 w-full">
+                                  <Button type="button" size="sm" onClick={() => navigate(`/messages/${claim.id}`)} className="w-full rounded-xl">
+                                    <MessageCircle size={16} /> Buka Chat
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="danger"
+                                    onClick={() => handleUpdateClaim(claim.id, 'ditolak')}
+                                    disabled={claimLoading}
+                                    className="w-full rounded-xl text-xs"
+                                  >
+                                    <X size={14} /> Batalkan Klaim / Kontak
+                                  </Button>
+                                </div>
+                              ) : null}
                             </div>
-                            <Badge variant={getClaimStatusVariant(claim.status)}>
-                              {getClaimStatusLabel(claim.status)}
-                            </Badge>
-                          </div>
-                          {claim.message && <p className="text-sm text-gray-600">{claim.message}</p>}
-                          {claim.status === 'pending' ? (
-                            <div className="grid grid-cols-2 gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => handleUpdateClaim(claim.id, 'diterima')}
-                                disabled={claimLoading}
-                                className="rounded-xl"
-                              >
-                                <Check size={16} /> Terima
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="danger"
-                                onClick={() => handleUpdateClaim(claim.id, 'ditolak')}
-                                disabled={claimLoading}
-                                className="rounded-xl"
-                              >
-                                <X size={16} /> Tolak
-                              </Button>
-                            </div>
-                          ) : claim.status === 'diterima' ? (
-                            <Button type="button" size="sm" onClick={() => navigate(`/messages/${claim.id}`)} className="w-full rounded-xl">
-                              <MessageCircle size={16} /> Buka Chat
-                            </Button>
-                          ) : null}
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
-                      Belum ada klaim untuk laporan ini.
-                    </div>
-                  )}
-                </Card>
-                <Button variant="danger" className="w-full py-4 text-base font-bold">
-                  Tutup Laporan
-                </Button>
+                      ) : (
+                        <div className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+                          Belum ada klaim untuk laporan ini.
+                        </div>
+                      )}
+                    </Card>
+                    <Button 
+                      variant="danger" 
+                      className="w-full py-4 text-base font-bold"
+                      onClick={handleResolveItem}
+                      disabled={actionLoading}
+                    >
+                      {actionLoading ? 'Memproses...' : 'Tutup Laporan'}
+                    </Button>
+                  </>
+                )}
               </>
             )}
           </div>

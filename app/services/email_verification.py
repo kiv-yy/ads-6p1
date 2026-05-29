@@ -9,13 +9,11 @@ from secrets import token_urlsafe
 import smtplib
 
 import requests
-
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models import AccountStatus, EmailVerification, User
 from app.services.base import BaseRepository
-
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +184,7 @@ class EmailVerificationRepository(BaseRepository):
 
     @classmethod
     def is_expired(cls, expires_at: datetime) -> bool:
-        now = cls.utc_now() if expires_at.tzinfo else datetime.now()
+        now = cls.utc_now() if expires_at.tzinfo else datetime.utcnow()
         return expires_at < now
 
     def create_token(self, user: User) -> tuple[EmailVerification, str]:

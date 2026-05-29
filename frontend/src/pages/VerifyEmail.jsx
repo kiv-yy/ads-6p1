@@ -85,8 +85,8 @@ export default function VerifyEmail() {
             <p className="rounded-2xl border border-red-100 bg-red-50 p-3 text-sm text-red-600">{resendError}</p>
           )}
 
-          <Button className="w-full py-3" onClick={handleResend} disabled={cooldown > 0 || resending}>
-            <RefreshCw size={18} />
+          <Button className="w-full py-3 flex items-center justify-center gap-2" onClick={handleResend} disabled={cooldown > 0 || resending}>
+            <RefreshCw size={18} className={resending ? "animate-spin" : ""} />
             {resending ? 'Mengirim...' : cooldown > 0 ? `Kirim ulang dalam ${cooldown}s` : 'Kirim Ulang Email'}
           </Button>
 

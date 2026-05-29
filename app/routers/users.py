@@ -120,8 +120,6 @@ def reset_password(
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Link reset password tidak valid atau sudah kedaluwarsa.")
     return schemas.PasswordResetResponse(message="Password berhasil diubah. Silakan login dengan password baru.")
-
-
 @router.get("/users/me", response_model=schemas.UserRead)
 def read_me(current_user: User = Depends(get_dev_current_user)) -> User:
     return current_user
