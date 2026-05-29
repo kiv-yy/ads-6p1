@@ -20,7 +20,6 @@ export default function CreateReport() {
     date: '',
     time: '',
     description: '',
-    traits: '',
   });
 
   const handleSubmit = async (e) => {
@@ -170,55 +169,39 @@ export default function CreateReport() {
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
               />
             </div>
-          </div>
-        </Card>
 
-        <Card className="p-6 md:p-8 space-y-6">
-          <div className="border-b border-gray-100 pb-4">
-            <h2 className="text-lg font-bold text-gray-900">Detail Barang</h2>
-          </div>
-          
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700 ml-1">Ciri-ciri (opsional)</label>
-            <textarea
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-ipb-green/20 focus:border-ipb-green outline-none min-h-[100px]"
-              placeholder="Ciri khusus barang..."
-              value={formData.traits}
-              onChange={(e) => setFormData({...formData, traits: e.target.value})}
-            />
-          </div>
-
-          <div className="space-y-4">
-            <label className="text-sm font-medium text-gray-700 ml-1">Upload Foto</label>
-            <label className="border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 hover:bg-gray-50 transition-colors cursor-pointer group overflow-hidden">
-              {imagePreview ? (
-                <div className="relative w-full">
-                  <img src={imagePreview} alt="Preview foto barang" className="w-full max-h-72 object-cover rounded-2xl" />
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      clearImage();
-                    }}
-                    className="absolute top-3 right-3 w-10 h-10 rounded-xl bg-white/90 text-red-500 shadow flex items-center justify-center"
-                    aria-label="Hapus foto"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="w-12 h-12 bg-gray-100 group-hover:bg-ipb-green-light rounded-full flex items-center justify-center transition-colors">
-                    <Camera size={24} className="text-gray-400 group-hover:text-ipb-green" />
+            <div className="md:col-span-2 space-y-4">
+              <label className="text-sm font-medium text-gray-700 ml-1">Upload Foto</label>
+              <label className="border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 hover:bg-gray-50 transition-colors cursor-pointer group overflow-hidden">
+                {imagePreview ? (
+                  <div className="relative w-full">
+                    <img src={imagePreview} alt="Preview foto barang" className="w-full max-h-72 object-cover rounded-2xl" />
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        clearImage();
+                      }}
+                      className="absolute top-3 right-3 w-10 h-10 rounded-xl bg-white/90 text-red-500 shadow flex items-center justify-center"
+                      aria-label="Hapus foto"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-700">Klik untuk memilih foto</p>
-                    <p className="text-xs text-gray-400">JPG, PNG, WEBP, atau GIF</p>
-                  </div>
-                </>
-              )}
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-            </label>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 bg-gray-100 group-hover:bg-ipb-green-light rounded-full flex items-center justify-center transition-colors">
+                      <Camera size={24} className="text-gray-400 group-hover:text-ipb-green" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-700">Klik untuk memilih foto</p>
+                      <p className="text-xs text-gray-400">JPG, PNG, WEBP, atau GIF</p>
+                    </div>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              </label>
+            </div>
           </div>
         </Card>
 

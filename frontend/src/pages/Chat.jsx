@@ -17,6 +17,20 @@ export default function Chat() {
   const scrollRef = useRef(null);
   const ws = useRef(null);
 
+  const getMessageText = (message) => (message?.content ?? message?.ciphertext ?? '').trim();
+  const getMessageSenderId = (message) => String(message?.user_id ?? message?.sender_id ?? '');
+  const getConversationUserId = (claim) => {
+    if (claim.item_user_id === user.id) {
+      return String(claim.claimant_id || claim.claim_user_id || claim.claimer_id || claim.claim_user?.id || claim.claim_user?.user_id || '');
+    }
+    return String(claim.item_user_id || claim.item?.user_id || claim.item?.owner_id || claim.item?.user?.id || claim.item?.owner?.id || '');
+  };
+  const visibleConversations = conversations.filter((claim, index, list) => {
+    const participantId = getConversationUserId(claim);
+    if (!participantId) return true;
+    return list.findIndex((item) => getConversationUserId(item) === participantId) === index;
+  });
+
   useEffect(() => {
     const fetchConversations = async () => {
       try {
@@ -58,8 +72,9 @@ export default function Chat() {
 
       ws.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (!data.id) return;
-        setMessages((prev) => [...prev, data]);
+        const message = data.message || data;
+        if (!message.id) return;
+        setMessages((prev) => [...prev, message]);
       };
 
       return () => {
@@ -76,14 +91,15 @@ export default function Chat() {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !claimId) return;
+    const messageText = newMessage.trim();
+    if (!messageText || !claimId) return;
 
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(newMessage);
+      ws.current.send(JSON.stringify({ content: messageText }));
       setNewMessage('');
     } else {
       // Fallback to HTTP if WS is not ready (though backend might not support it)
-      api.post(`/claims/${claimId}/chat`, { content: newMessage })
+      api.post(`/claims/${claimId}/chat`, { content: messageText })
         .then(() => setNewMessage(''))
         .catch(console.error);
     }
@@ -112,8 +128,8 @@ export default function Chat() {
             <div className="p-4 space-y-4">
               {Array(4).fill(0).map((_, i) => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
             </div>
-          ) : conversations.length > 0 ? (
-            conversations.map((claim) => (
+          ) : visibleConversations.length > 0 ? (
+            visibleConversations.map((claim) => (
               <Link
                 key={claim.id}
                 to={`/messages/${claim.id}`}
@@ -177,25 +193,32 @@ export default function Chat() {
                 <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400 bg-white px-3 py-1 rounded-full border border-gray-100">Hari ini</span>
               </div>
 
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "flex flex-col max-w-[80%] space-y-1",
-                    msg.user_id === user.id ? "ml-auto items-end" : "mr-auto items-start"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "px-4 py-2.5 rounded-2xl text-sm shadow-sm",
-                      msg.user_id === user.id ? "bg-ipb-green text-white rounded-tr-none" : "bg-white text-gray-800 border border-gray-100 rounded-tl-none"
-                    )}
-                  >
-                    {msg.content}
-                  </div>
-                  <span className="text-[10px] text-gray-400 px-1">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
+              {messages
+                .filter((msg) => getMessageText(msg) || msg.image_attachment)
+                .map((msg, i) => {
+                  const messageText = getMessageText(msg);
+                  const isOwnMessage = getMessageSenderId(msg) === String(user.id);
+
+                  return (
+                    <div
+                      key={msg.id || i}
+                      className={cn(
+                        "flex flex-col max-w-[80%] space-y-1",
+                        isOwnMessage ? "ml-auto items-end" : "mr-auto items-start"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "px-4 py-2.5 rounded-2xl text-sm shadow-sm",
+                          isOwnMessage ? "bg-ipb-green text-white rounded-tr-none" : "bg-white text-gray-800 border border-gray-100 rounded-tl-none"
+                        )}
+                      >
+                        {messageText}
+                      </div>
+                      <span className="text-[10px] text-gray-400 px-1">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  );
+                })}
               
               {activeClaim?.status === 'pending' && (
                 <div className="flex justify-center p-4">

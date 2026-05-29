@@ -8,6 +8,9 @@ from app.models import AccountStatus, User, UserRole
 from app.services.user_service import UserRepository
 
 
+BLOCKED_USER_MESSAGE = "Mohon maaf anda telah diblokir karena telah melakukan pelanggaran"
+
+
 class ApiError:
     @staticmethod
     def not_found(resource: str) -> HTTPException:
@@ -36,7 +39,7 @@ def get_current_or_dev_user(
     if not user:
         raise ApiError.not_found("User")
     if user.account_status != AccountStatus.ACTIVE.value:
-        raise ApiError.forbidden("User inactive or blocked")
+        raise ApiError.forbidden(BLOCKED_USER_MESSAGE)
     return user
 
 

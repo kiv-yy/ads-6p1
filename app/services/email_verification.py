@@ -184,7 +184,7 @@ class EmailVerificationRepository(BaseRepository):
 
     @classmethod
     def is_expired(cls, expires_at: datetime) -> bool:
-        now = cls.utc_now() if expires_at.tzinfo else datetime.utcnow()
+        now = cls.utc_now() if expires_at.tzinfo else datetime.now()
         return expires_at < now
 
     def create_token(self, user: User) -> tuple[EmailVerification, str]:

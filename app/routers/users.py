@@ -17,6 +17,7 @@ from app.services.user_service import UserRepository
 
 router = APIRouter(tags=["Users"])
 settings = get_settings()
+BLOCKED_USER_MESSAGE = "Mohon maaf anda telah diblokir karena telah melakukan pelanggaran"
 
 
 @router.post("/auth/register", response_model=schemas.RegisterResponse, status_code=status.HTTP_201_CREATED)
@@ -52,7 +53,7 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user.account_status == AccountStatus.BANNED.value:
-        raise ApiError.forbidden("User is blocked")
+        raise ApiError.forbidden(BLOCKED_USER_MESSAGE)
     if user.account_status != AccountStatus.ACTIVE.value:
         raise ApiError.forbidden("Email belum diverifikasi. Silakan cek email IPB kamu.")
 
@@ -80,7 +81,7 @@ def resend_verification(
     if user.account_status == AccountStatus.ACTIVE.value:
         return schemas.RegisterResponse(user=user, message="Email sudah diverifikasi.", verification_url=None)
     if user.account_status == AccountStatus.BANNED.value:
-        raise ApiError.forbidden("User is blocked")
+        raise ApiError.forbidden(BLOCKED_USER_MESSAGE)
     try:
         verification_url = EmailVerificationRepository(db).create_and_send(user)
     except EmailDeliveryError as error:

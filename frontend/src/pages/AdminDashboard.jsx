@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, UserX, UserCheck, ShieldAlert, Trash2, ShieldCheck, MoreVertical, Eye } from 'lucide-react';
+import { Search, UserCheck, ShieldAlert, Trash2, ShieldCheck, Eye, CheckCircle } from 'lucide-react';
 import api from '../api/axios';
-import { Card, Button, Badge, Input } from '../components/UI';
+import { Card, Button, Badge } from '../components/UI';
 import { cn } from '../utils/cn';
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState('users');
   const [users, setUsers] = useState([]);
-  const [claims, setClaims] = useState([]);
+  const [reports, setReports] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkError, setBulkError] = useState('');
   const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState([]);
 
   useEffect(() => {
+    setSelectedIds([]);
+    setBulkError('');
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -21,8 +26,8 @@ export default function AdminDashboard() {
           const res = await api.get('/admin/users');
           setUsers(res.data);
         } else if (tab === 'moderation') {
-          const res = await api.get('/claims'); // Representing claims/interactions
-          setClaims(res.data);
+          const res = await api.get('/admin/reports');
+          setReports(res.data);
         } else {
           const res = await api.get('/items');
           setItems(res.data);
@@ -35,6 +40,43 @@ export default function AdminDashboard() {
     };
     fetchData();
   }, [tab]);
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredUsers = users.filter((u) => {
+    if (!normalizedSearch) return true;
+    return [u.full_name, u.email, u.email_ipb, u.nim, u.faculty]
+      .some((value) => String(value || '').toLowerCase().includes(normalizedSearch));
+  });
+  const filteredReports = reports.filter((report) => {
+    if (!normalizedSearch) return true;
+    return [report.post?.name, report.post?.type, report.reporter?.full_name, report.reporter?.email, report.reason, report.status]
+      .some((value) => String(value || '').toLowerCase().includes(normalizedSearch));
+  });
+  const filteredItems = items.filter((item) => {
+    if (!normalizedSearch) return true;
+    return [item.name, item.category, item.type, item.status, item.location, item.owner?.full_name, item.owner?.email]
+      .some((value) => String(value || '').toLowerCase().includes(normalizedSearch));
+  });
+  const visibleRows = tab === 'users' ? filteredUsers : tab === 'moderation' ? filteredReports : filteredItems;
+  const visibleIds = visibleRows.map((row) => row.id);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+
+  const toggleSelected = (id) => {
+    setSelectedIds((prev) => (
+      prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]
+    ));
+  };
+
+  const toggleAllVisible = () => {
+    setSelectedIds((prev) => {
+      if (allVisibleSelected) {
+        return prev.filter((id) => !visibleIds.includes(id));
+      }
+      return Array.from(new Set([...prev, ...visibleIds]));
+    });
+  };
+
+  const clearSelection = () => setSelectedIds([]);
 
   const handleBlockUser = async (userId) => {
     try {
@@ -50,11 +92,44 @@ export default function AdminDashboard() {
     } catch (err) { console.error(err); }
   };
 
-  const handleRejectClaim = async (claimId) => {
+  const handleReviewReport = async (reportId, status = 'ditinjau') => {
     try {
-      const res = await api.patch(`/claims/${claimId}`, { status: 'ditolak' });
-      setClaims(prev => prev.map(c => c.id === claimId ? res.data : c));
+      const res = await api.patch(`/admin/reports/${reportId}`, { status });
+      setReports(prev => prev.map(report => report.id === reportId ? res.data : report));
     } catch (err) { console.error(err); }
+  };
+
+  const runBulkAction = async (action) => {
+    if (selectedIds.length === 0 || bulkLoading) return;
+    setBulkLoading(true);
+    setBulkError('');
+    try {
+      if (action === 'block-users' || action === 'unblock-users') {
+        const isBlocked = action === 'block-users';
+        const responses = await Promise.all(selectedIds.map((userId) => (
+          api.patch(`/admin/users/${userId}/moderation`, {
+            is_blocked: isBlocked,
+            notes: isBlocked ? 'Bulk action: blokir user' : 'Bulk action: unblock user',
+          })
+        )));
+        const updatedUsers = responses.map((response) => response.data);
+        setUsers((prev) => prev.map((user) => updatedUsers.find((updated) => updated.id === user.id) || user));
+      }
+      if (action === 'review-reports') {
+        const responses = await Promise.all(selectedIds.map((reportId) => api.patch(`/admin/reports/${reportId}`, { status: 'ditinjau' })));
+        const updatedReports = responses.map((response) => response.data);
+        setReports((prev) => prev.map((report) => updatedReports.find((updated) => updated.id === report.id) || report));
+      }
+      if (action === 'delete-items') {
+        await Promise.all(selectedIds.map((itemId) => api.delete(`/admin/items/${itemId}`)));
+        setItems((prev) => prev.filter((item) => !selectedIds.includes(item.id)));
+      }
+      clearSelection();
+    } catch (error) {
+      setBulkError(error.response?.data?.detail || 'Bulk action gagal diproses.');
+    } finally {
+      setBulkLoading(false);
+    }
   };
 
   return (
@@ -92,7 +167,40 @@ export default function AdminDashboard() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          {selectedIds.length > 0 && (
+            <div className="w-full md:w-auto flex flex-wrap items-center gap-2 justify-start md:justify-end">
+              <span className="text-xs font-bold text-gray-500">{selectedIds.length} dipilih</span>
+              {tab === 'users' && (
+                <>
+                  <Button size="sm" variant="danger" className="rounded-lg" disabled={bulkLoading} onClick={() => runBulkAction('block-users')}>
+                    Blokir
+                  </Button>
+                  <Button size="sm" variant="secondary" className="rounded-lg" disabled={bulkLoading} onClick={() => runBulkAction('unblock-users')}>
+                    Unblock
+                  </Button>
+                </>
+              )}
+              {tab === 'moderation' && (
+                <Button size="sm" variant="secondary" className="rounded-lg" disabled={bulkLoading} onClick={() => runBulkAction('review-reports')}>
+                  Tandai Ditinjau
+                </Button>
+              )}
+              {tab === 'items' && (
+                <Button size="sm" variant="danger" className="rounded-lg" disabled={bulkLoading} onClick={() => runBulkAction('delete-items')}>
+                  Hapus Item
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" className="rounded-lg" disabled={bulkLoading} onClick={clearSelection}>
+                Batal
+              </Button>
+            </div>
+          )}
         </div>
+        {bulkError && (
+          <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+            {bulkError}
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           {loading ? (
@@ -101,6 +209,15 @@ export default function AdminDashboard() {
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-gray-400 uppercase text-[10px] font-bold tracking-wider">
                 <tr>
+                  <th className="px-6 py-4 w-12">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={toggleAllVisible}
+                      className="h-4 w-4 rounded border-gray-300 text-ipb-green focus:ring-ipb-green"
+                      aria-label="Pilih semua data terlihat"
+                    />
+                  </th>
                   {tab === 'users' ? (
                     <>
                       <th className="px-6 py-4">Nama</th>
@@ -111,13 +228,15 @@ export default function AdminDashboard() {
                   ) : tab === 'moderation' ? (
                     <>
                       <th className="px-6 py-4">Item</th>
-                      <th className="px-6 py-4">Pelapor Klaim</th>
+                      <th className="px-6 py-4">Pelapor</th>
+                      <th className="px-6 py-4">Alasan</th>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4 text-right">Aksi</th>
                     </>
                   ) : (
                     <>
                       <th className="px-6 py-4">Barang</th>
+                      <th className="px-6 py-4">Pembuat Laporan</th>
                       <th className="px-6 py-4">Kategori</th>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4 text-right">Aksi</th>
@@ -126,8 +245,17 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {tab === 'users' && users.map(u => (
+                {tab === 'users' && filteredUsers.map(u => (
                   <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(u.id)}
+                        onChange={() => toggleSelected(u.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-ipb-green focus:ring-ipb-green"
+                        aria-label={`Pilih user ${u.full_name}`}
+                      />
+                    </td>
                     <td className="px-6 py-4 font-bold text-gray-900">{u.full_name}</td>
                     <td className="px-6 py-4 text-gray-500">
                       <div>{u.faculty}</div>
@@ -149,46 +277,83 @@ export default function AdminDashboard() {
                   </tr>
                 ))}
 
-                {tab === 'moderation' && claims.map(c => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                {tab === 'moderation' && filteredReports.map(report => (
+                  <tr key={report.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900">{c.item?.name || "Barang Hilang/Temuan"}</div>
-                      <div className="text-xs text-gray-500 capitalize">{c.item?.type || "N/A"}</div>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(report.id)}
+                        onChange={() => toggleSelected(report.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-ipb-green focus:ring-ipb-green"
+                        aria-label={`Pilih laporan ${report.id}`}
+                      />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{c.claim_user?.full_name || c.claimant_name}</div>
-                      <div className="text-xs text-gray-500">{c.claim_user?.email || "Email N/A"}</div>
+                      <div className="font-bold text-gray-900">{report.post?.name || "Post tidak tersedia"}</div>
+                      <div className="text-xs text-gray-500 capitalize">{report.post?.type || report.post_id || "N/A"}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={c.status === 'diterima' ? 'success' : c.status === 'ditolak' ? 'danger' : 'warning'}>
-                        {c.status}
+                      <div className="font-medium text-gray-900">{report.reporter?.full_name || "User"}</div>
+                      <div className="text-xs text-gray-500">{report.reporter?.email || "Email N/A"}</div>
+                    </td>
+                    <td className="px-6 py-4 max-w-xs">
+                      <p className="line-clamp-2 text-gray-600">{report.reason}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={report.status === 'selesai' ? 'success' : report.status === 'ditinjau' ? 'info' : 'warning'}>
+                        {report.status}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <Link to={`/items/${c.item_id || c.item?.id}`}>
-                        <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center">
-                          <Eye size={14} />
-                        </Button>
-                      </Link>
-                      {c.status !== 'ditolak' && (
+                      {report.post_id && (
+                        <Link to={`/items/${report.post_id}`}>
+                          <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center">
+                            <Eye size={14} />
+                          </Button>
+                        </Link>
+                      )}
+                      {report.status === 'pending' && (
                         <Button 
                           size="sm" 
-                          variant="danger" 
+                          variant="primary" 
                           className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center"
-                          onClick={() => handleRejectClaim(c.id)}
+                          onClick={() => handleReviewReport(report.id)}
                         >
-                          <Trash2 size={14} />
+                          <ShieldCheck size={14} />
+                        </Button>
+                      )}
+                      {report.status === 'ditinjau' && (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center"
+                          onClick={() => handleReviewReport(report.id, 'selesai')}
+                        >
+                          <CheckCircle size={14} />
                         </Button>
                       )}
                     </td>
                   </tr>
                 ))}
 
-                {tab === 'items' && items.map(item => (
+                {tab === 'items' && filteredItems.map(item => (
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(item.id)}
+                        onChange={() => toggleSelected(item.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-ipb-green focus:ring-ipb-green"
+                        aria-label={`Pilih item ${item.name}`}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-gray-900">{item.name}</div>
                       <div className="text-xs text-gray-500 capitalize">{item.type}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">{item.owner?.full_name || 'User'}</div>
+                      <div className="text-xs text-gray-500">{item.owner?.email || 'Email N/A'}</div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">{item.category}</td>
                     <td className="px-6 py-4">

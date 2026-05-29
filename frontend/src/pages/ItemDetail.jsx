@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, User, Phone, Mail, ChevronLeft, Share2, Package, MessageCircle, ShieldCheck, Check, X } from 'lucide-react';
+import { MapPin, Calendar, Clock, User, Phone, Mail, ChevronLeft, Share2, Package, MessageCircle, ShieldCheck, Check, X, Flag } from 'lucide-react';
 import api from '../api/axios';
 import { Button, Card, Badge } from '../components/UI';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,17 +12,25 @@ export default function ItemDetail() {
   const navigate = useNavigate();
   const [item, setItem] = useState(null);
   const [claims, setClaims] = useState([]);
-  const [claimMessage, setClaimMessage] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [claimLoading, setClaimLoading] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportError, setReportError] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   const isOwner = item?.user_id === currentUser?.id || item?.owner_id === currentUser?.id;
-  const myClaim = claims.find((claim) => claim.claimant_id === currentUser?.id || claim.claim_user_id === currentUser?.id);
+  const myClaim = claims.find(
+    (claim) =>
+      (claim.claimant_id === currentUser?.id || claim.claim_user_id === currentUser?.id) &&
+      claim.status !== 'ditolak'
+  );
   const acceptedClaim = claims.find((claim) => claim.status === 'diterima');
   const activeChatClaim = isOwner ? acceptedClaim : (myClaim?.status === 'diterima' ? myClaim : null);
+  const visibleClaims = claims.filter((claim) => claim.status !== 'ditolak');
   const claimCtaLabel = item && isLostItem(item.type) ? 'Saya Menemukan Barang Ini' : 'Ajukan Klaim Barang Ini';
   const reporter = item?.user || item?.owner;
 
@@ -69,9 +77,10 @@ export default function ItemDetail() {
     try {
       await api.post('/claims', {
         item_id: item.id,
-        message: claimMessage || (isLostItem(item.type) ? 'Saya menemukan barang ini dan ingin menghubungi pelapor.' : 'Saya ingin mengajukan klaim untuk barang ini.'),
+        message: isLostItem(item.type)
+          ? 'Saya menemukan barang ini dan ingin menghubungi pelapor.'
+          : 'Saya ingin mengajukan klaim untuk barang ini.',
       });
-      setClaimMessage('');
       setNotice('Klaim berhasil dikirim. Pemilik laporan akan mendapat notifikasi.');
       await fetchClaims(item);
     } catch (error) {
@@ -87,7 +96,7 @@ export default function ItemDetail() {
     setNotice('');
     try {
       await api.patch(`/claims/${claimId}`, { status });
-      setNotice(status === 'diterima' ? 'Klaim diterima. Chat sekarang bisa digunakan.' : 'Klaim ditolak.');
+      setNotice(status === 'diterima' ? 'Klaim diterima. Chat sekarang bisa digunakan.' : '');
       await fetchClaims(item);
     } catch (error) {
       setError(error.response?.data?.detail || 'Gagal memperbarui klaim.');
@@ -111,6 +120,73 @@ export default function ItemDetail() {
       setActionLoading(false);
     }
   };
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: item?.name ? `${item.name} - Lost & Found IPB` : 'Lost & Found IPB',
+      text: item?.name ? `Lihat laporan ${item.name} di Lost & Found IPB.` : 'Lihat laporan ini di Lost & Found IPB.',
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setNotice('Link laporan berhasil disalin.');
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        setError('Gagal membagikan laporan.');
+      }
+    }
+  };
+
+  const handleReportItem = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    setReportError('');
+    setReportReason('');
+    setIsReportModalOpen(true);
+  };
+
+  const handleSubmitReport = async (event) => {
+    event.preventDefault();
+    const trimmedReason = reportReason.trim();
+    if (trimmedReason.length < 3) {
+      setReportError('Alasan laporan minimal 3 karakter.');
+      return;
+    }
+
+    setReportLoading(true);
+    setReportError('');
+    setError('');
+    setNotice('');
+    try {
+      await api.post('/reports', {
+        post_id: item.id,
+        reason: trimmedReason,
+      });
+      setIsReportModalOpen(false);
+      setReportReason('');
+      setNotice('Laporan berhasil dikirim ke admin.');
+    } catch (error) {
+      setReportError(error.response?.data?.detail || 'Gagal mengirim laporan.');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const closeReportModal = () => {
+    if (reportLoading) return;
+    setIsReportModalOpen(false);
+    setReportReason('');
+    setReportError('');
+  };
   const getClaimStatusLabel = (status) => ({
     pending: 'Menunggu',
     diterima: 'Diterima',
@@ -133,9 +209,29 @@ export default function ItemDetail() {
           <ChevronLeft size={24} />
           <span className="font-semibold">Detail Barang</span>
         </button>
-        <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-          <Share2 size={20} className="text-gray-500" />
-        </button>
+        <div className="flex items-center gap-2">
+          {!isOwner && (
+            <button
+              type="button"
+              onClick={handleReportItem}
+              disabled={reportLoading}
+              className="p-2 hover:bg-red-50 rounded-full transition-colors disabled:opacity-60"
+              aria-label="Laporkan post"
+              title="Laporkan post"
+            >
+              <Flag size={20} className="text-red-500" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleShare}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Bagikan laporan"
+            title="Bagikan laporan"
+          >
+            <Share2 size={20} className="text-gray-500" />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -259,25 +355,35 @@ export default function ItemDetail() {
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-bold text-gray-900">Status Klaim</p>
-                        <p className="text-xs text-gray-500">Riwayat klaim untuk laporan ini</p>
+                        <p className="text-xs text-gray-500">
+                          {myClaim.status === 'diterima'
+                            ? 'Klaim diterima. Chat sudah bisa digunakan.'
+                            : 'Klaim sedang menunggu persetujuan.'}
+                        </p>
                       </div>
-                      <Badge variant={getClaimStatusVariant(myClaim.status)}>
-                        {getClaimStatusLabel(myClaim.status)}
-                      </Badge>
+                      {myClaim.status === 'pending' && (
+                        <Badge variant={getClaimStatusVariant(myClaim.status)}>
+                          {getClaimStatusLabel(myClaim.status)}
+                        </Badge>
+                      )}
                     </div>
-                    {myClaim.message && <p className="text-sm text-gray-600">{myClaim.message}</p>}
-                    {myClaim.status !== 'ditolak' && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleUpdateClaim(myClaim.id, 'ditolak')}
-                        disabled={claimLoading}
-                        className="w-full mt-2 text-xs rounded-xl"
-                      >
-                        Batalkan Klaim / Hubungi
+                    {activeChatClaim ? (
+                      <Button onClick={() => navigate(`/messages/${activeChatClaim.id}`)} className="w-full py-4 text-base font-bold bg-ipb-green">
+                        <MessageCircle size={20} /> Chat Pelapor
+                      </Button>
+                    ) : (
+                      <Button type="button" disabled className="w-full py-4 text-base font-bold bg-ipb-green opacity-60">
+                        <MessageCircle size={20} /> Chat Aktif Setelah Klaim Diterima
                       </Button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateClaim(myClaim.id, 'ditolak')}
+                      disabled={claimLoading}
+                      className="w-full text-xs font-bold text-red-500 hover:text-red-600 disabled:opacity-60"
+                    >
+                      {claimLoading ? 'Membatalkan...' : 'Batalkan Klaim'}
+                    </button>
                   </Card>
                 ) : (
                   <Card className="p-5 space-y-4">
@@ -285,12 +391,6 @@ export default function ItemDetail() {
                       <h3 className="font-bold text-gray-900">{claimCtaLabel}</h3>
                       <p className="text-sm text-gray-500 mt-1">Kirim klaim agar pemilik laporan mendapat notifikasi.</p>
                     </div>
-                    <textarea
-                      value={claimMessage}
-                      onChange={(event) => setClaimMessage(event.target.value)}
-                      className="w-full min-h-28 resize-none rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-ipb-green focus:bg-white"
-                      placeholder={isLostItem(item.type) ? 'Ceritakan lokasi/waktu kamu menemukan barang ini...' : 'Jelaskan bukti kepemilikan barang ini...'}
-                    />
                     <Button
                       type="button"
                       onClick={handleCreateClaim}
@@ -301,16 +401,6 @@ export default function ItemDetail() {
                       <ShieldCheck size={20} /> {actionLoading ? 'Mengirim...' : claimCtaLabel}
                     </Button>
                   </Card>
-                )}
-
-                {activeChatClaim ? (
-                  <Button onClick={() => navigate(`/messages/${activeChatClaim.id}`)} className="w-full py-4 text-base font-bold bg-ipb-green">
-                    <MessageCircle size={20} /> Chat Pelapor
-                  </Button>
-                ) : (
-                  <Button type="button" disabled className="w-full py-4 text-base font-bold bg-ipb-green opacity-60">
-                    <MessageCircle size={20} /> Chat Aktif Setelah Klaim Diterima
-                  </Button>
                 )}
               </>
             ) : (
@@ -327,18 +417,20 @@ export default function ItemDetail() {
                         <h3 className="font-bold text-gray-900">Klaim Masuk</h3>
                         <p className="text-sm text-gray-500 mt-1">Terima klaim untuk membuka chat dengan pengaju.</p>
                       </div>
-                      {claims.length > 0 ? (
-                        <div className="space-y-3">
-                          {claims.map((claim) => (
-                            <div key={claim.id} className="rounded-2xl border border-gray-100 p-4 space-y-3">
+                      {visibleClaims.length > 0 ? (
+                        <div className="flex gap-3 overflow-x-auto pb-2 snap-x custom-scrollbar">
+                          {visibleClaims.map((claim) => (
+                            <div key={claim.id} className="min-w-[260px] snap-start rounded-2xl border border-gray-100 p-4 space-y-3">
                               <div className="flex items-start justify-between gap-3">
-                                <div>
+                                <div className="min-w-0">
                                   <p className="font-bold text-sm text-gray-900">{claim.claim_user?.full_name || claim.claimant_name}</p>
                                   <p className="text-xs text-gray-500">{claim.claim_user?.email || 'Pengaju klaim'}</p>
                                 </div>
-                                <Badge variant={getClaimStatusVariant(claim.status)}>
-                                  {getClaimStatusLabel(claim.status)}
-                                </Badge>
+                                {claim.status === 'pending' && (
+                                  <Badge variant={getClaimStatusVariant(claim.status)}>
+                                    {getClaimStatusLabel(claim.status)}
+                                  </Badge>
+                                )}
                               </div>
                               {claim.message && <p className="text-sm text-gray-600">{claim.message}</p>}
                               {claim.status === 'pending' ? (
@@ -376,7 +468,7 @@ export default function ItemDetail() {
                                     disabled={claimLoading}
                                     className="w-full rounded-xl text-xs"
                                   >
-                                    <X size={14} /> Batalkan Klaim / Kontak
+                                    <X size={14} /> Tolak
                                   </Button>
                                 </div>
                               ) : null}
@@ -404,6 +496,49 @@ export default function ItemDetail() {
           </div>
         </div>
       </div>
+
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <form onSubmit={handleSubmitReport} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Laporkan Post</h2>
+                <p className="mt-1 text-sm text-gray-500">Jelaskan alasan laporan agar admin bisa meninjau dengan tepat.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeReportModal}
+                disabled={reportLoading}
+                className="w-9 h-9 rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 flex items-center justify-center disabled:opacity-60"
+                aria-label="Tutup modal laporan"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-1">Alasan Laporan</label>
+              <textarea
+                value={reportReason}
+                onChange={(event) => setReportReason(event.target.value)}
+                className="w-full min-h-32 resize-none rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm outline-none transition-all focus:border-ipb-green focus:bg-white focus:ring-2 focus:ring-ipb-green/20"
+                placeholder="Contoh: informasi palsu, foto tidak pantas, spam, atau laporan mencurigakan..."
+                autoFocus
+              />
+              {reportError && <p className="text-xs font-medium text-red-500 ml-1">{reportError}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button type="button" variant="secondary" onClick={closeReportModal} disabled={reportLoading} className="rounded-2xl">
+                Batal
+              </Button>
+              <Button type="submit" variant="danger" disabled={reportLoading || reportReason.trim().length < 3} className="rounded-2xl">
+                {reportLoading ? 'Mengirim...' : 'Kirim'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

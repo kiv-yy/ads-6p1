@@ -5,6 +5,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from app.models import ReportStatus
+from app.schemas.post import ItemRead
+from app.schemas.user import UserRead
 
 
 class ReportCreate(BaseModel):
@@ -35,6 +37,8 @@ class ReportRead(BaseModel):
     reason: str
     status: ReportStatus
     created_at: datetime
+    post: ItemRead | None = None
+    reporter: UserRead | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

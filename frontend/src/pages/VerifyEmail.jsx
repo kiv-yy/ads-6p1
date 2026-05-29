@@ -20,7 +20,7 @@ export default function VerifyEmail() {
     if (!token) {
       if (email) {
         setStatus('pending');
-        setMessage('Kami sudah mengirim link verifikasi ke email IPB kamu.');
+        setMessage('Kami sudah mengirim link verifikasi ke email IPB Anda.');
       } else {
         setStatus('error');
         setMessage('Token verifikasi tidak ditemukan.');
@@ -75,7 +75,7 @@ export default function VerifyEmail() {
           </div>
 
           <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-sm text-green-700">
-            Buka inbox email IPB kamu, lalu klik link verifikasi untuk mengaktifkan akun.
+            Mohon cek inbox email utama dan folder spam, lalu klik link verifikasi untuk mengaktifkan akun.
           </div>
 
           {resendMessage && (

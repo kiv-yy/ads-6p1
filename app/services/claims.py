@@ -72,11 +72,6 @@ class ClaimRepository(BaseRepository):
         claim.status = status.value
         if status == ClaimStatus.ACCEPTED:
             claim.item.status = ItemStatus.IN_PROGRESS.value
-            (
-                self.db.query(Claim)
-                .filter(Claim.item_id == claim.item_id, Claim.id != claim.id, Claim.status == ClaimStatus.PENDING.value)
-                .update({Claim.status: ClaimStatus.REJECTED.value}, synchronize_session=False)
-            )
             ChatRepository(self.db).get_or_create_for_claim(claim)
         elif status == ClaimStatus.REJECTED and not self._has_accepted_claim(claim.item_id):
             claim.item.status = ItemStatus.OPEN.value

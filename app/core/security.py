@@ -16,6 +16,7 @@ from app.schemas import TokenData
 settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+BLOCKED_USER_MESSAGE = "Mohon maaf anda telah diblokir karena telah melakukan pelanggaran"
 
 
 class PasswordService:
@@ -88,7 +89,7 @@ class AuthService:
         if user is None:
             raise credentials_exception
         if user.account_status != AccountStatus.ACTIVE.value:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User inactive or blocked")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=BLOCKED_USER_MESSAGE)
         return user
 
 

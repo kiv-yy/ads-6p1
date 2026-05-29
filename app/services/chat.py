@@ -2,6 +2,7 @@ from collections import defaultdict
 from uuid import UUID
 
 from fastapi import WebSocket
+from sqlalchemy import and_, or_
 
 from app import schemas
 from app.models import Chat, ChatMessage, Claim
@@ -15,7 +16,12 @@ class ChatRepository(BaseRepository):
         sender_id = claim.claimant_id
         chat = (
             self.db.query(Chat)
-            .filter(Chat.post_id == claim.item_id, Chat.sender_id == sender_id, Chat.receiver_id == owner_id)
+            .filter(
+                or_(
+                    and_(Chat.sender_id == sender_id, Chat.receiver_id == owner_id),
+                    and_(Chat.sender_id == owner_id, Chat.receiver_id == sender_id),
+                )
+            )
             .first()
         )
         if chat:
@@ -26,7 +32,12 @@ class ChatRepository(BaseRepository):
     def get_for_claim(self, claim: Claim) -> Chat | None:
         return (
             self.db.query(Chat)
-            .filter(Chat.post_id == claim.item_id, Chat.sender_id == claim.claimant_id, Chat.receiver_id == claim.item.owner_id)
+            .filter(
+                or_(
+                    and_(Chat.sender_id == claim.claimant_id, Chat.receiver_id == claim.item.owner_id),
+                    and_(Chat.sender_id == claim.item.owner_id, Chat.receiver_id == claim.claimant_id),
+                )
+            )
             .first()
         )
 
