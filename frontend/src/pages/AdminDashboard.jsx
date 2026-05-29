@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, UserX, UserCheck, ShieldAlert, Trash2, ShieldCheck, MoreVertical, Eye } from 'lucide-react';
 import api from '../api/axios';
 import { Card, Button, Badge, Input } from '../components/UI';
@@ -20,8 +21,8 @@ export default function AdminDashboard() {
           const res = await api.get('/admin/users');
           setUsers(res.data);
         } else if (tab === 'moderation') {
-          const res = await api.get('/claims'); // Representing reported items/claims
-          setClaims(res.data.filter(c => c.status === 'PENDING'));
+          const res = await api.get('/claims'); // Representing claims/interactions
+          setClaims(res.data);
         } else {
           const res = await api.get('/items');
           setItems(res.data);
@@ -37,8 +38,22 @@ export default function AdminDashboard() {
 
   const handleBlockUser = async (userId) => {
     try {
-      await api.patch(`/admin/users/${userId}/block`);
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: !u.is_active } : u));
+      const res = await api.patch(`/admin/users/${userId}/block`);
+      setUsers(prev => prev.map(u => u.id === userId ? res.data : u));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDeleteItem = async (itemId) => {
+    try {
+      await api.delete(`/admin/items/${itemId}`);
+      setItems(prev => prev.filter(i => i.id !== itemId));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleRejectClaim = async (claimId) => {
+    try {
+      const res = await api.patch(`/claims/${claimId}`, { status: 'ditolak' });
+      setClaims(prev => prev.map(c => c.id === claimId ? res.data : c));
     } catch (err) { console.error(err); }
   };
 
@@ -97,12 +112,14 @@ export default function AdminDashboard() {
                     <>
                       <th className="px-6 py-4">Item</th>
                       <th className="px-6 py-4">Pelapor Klaim</th>
+                      <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4 text-right">Aksi</th>
                     </>
                   ) : (
                     <>
                       <th className="px-6 py-4">Barang</th>
                       <th className="px-6 py-4">Kategori</th>
+                      <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4 text-right">Aksi</th>
                     </>
                   )}
@@ -133,18 +150,66 @@ export default function AdminDashboard() {
                 ))}
 
                 {tab === 'moderation' && claims.map(c => (
-                  <tr key={c.id}>
+                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900">{c.item?.name}</div>
-                      <div className="text-xs text-gray-500">{c.item?.type}</div>
+                      <div className="font-bold text-gray-900">{c.item?.name || "Barang Hilang/Temuan"}</div>
+                      <div className="text-xs text-gray-500 capitalize">{c.item?.type || "N/A"}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{c.claim_user?.full_name}</div>
-                      <div className="text-xs text-gray-500">{c.claim_user?.email}</div>
+                      <div className="font-medium text-gray-900">{c.claim_user?.full_name || c.claimant_name}</div>
+                      <div className="text-xs text-gray-500">{c.claim_user?.email || "Email N/A"}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={c.status === 'diterima' ? 'success' : c.status === 'ditolak' ? 'danger' : 'warning'}>
+                        {c.status}
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                       <Button size="sm" variant="secondary" className="h-8 rounded-lg"><Eye size={14} /></Button>
-                       <Button size="sm" variant="danger" className="h-8 rounded-lg"><Trash2 size={14} /></Button>
+                      <Link to={`/items/${c.item_id || c.item?.id}`}>
+                        <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center">
+                          <Eye size={14} />
+                        </Button>
+                      </Link>
+                      {c.status !== 'ditolak' && (
+                        <Button 
+                          size="sm" 
+                          variant="danger" 
+                          className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center"
+                          onClick={() => handleRejectClaim(c.id)}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+
+                {tab === 'items' && items.map(item => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-gray-900">{item.name}</div>
+                      <div className="text-xs text-gray-500 capitalize">{item.type}</div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 font-medium">{item.category}</td>
+                    <td className="px-6 py-4">
+                      <Badge variant={item.status === 'selesai' ? 'success' : 'warning'}>
+                        {item.status}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-2">
+                      <Link to={`/items/${item.id}`}>
+                        <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center">
+                          <Eye size={14} />
+                        </Button>
+                      </Link>
+                      <Button 
+                        size="sm" 
+                        variant="danger" 
+                        className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center"
+                        onClick={() => handleDeleteItem(item.id)}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
                     </td>
                   </tr>
                 ))}

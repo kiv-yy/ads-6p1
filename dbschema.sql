@@ -57,6 +57,43 @@ COMMENT ON COLUMN users.status_akun     IS 'aktif | nonaktif | banned';
 
 
 
+-- TABEL EMAIL_VERIFICATIONS
+
+CREATE TABLE IF NOT EXISTS email_verifications (
+    verification_id UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID        NOT NULL
+                    REFERENCES users(user_id) ON DELETE CASCADE,
+    token_hash      VARCHAR(128) NOT NULL UNIQUE,
+    expires_at      TIMESTAMP   NOT NULL,
+    verified_at     TIMESTAMP,
+    created_at      TIMESTAMP   NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE  email_verifications             IS 'Token verifikasi email akun baru';
+COMMENT ON COLUMN email_verifications.token_hash  IS 'SHA-256 hash dari token verifikasi email';
+
+
+
+-- TABEL NOTIFICATIONS
+
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id UUID         PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    actor_id        UUID         REFERENCES users(user_id) ON DELETE SET NULL,
+    type            VARCHAR(50)  NOT NULL,
+    title           VARCHAR(150) NOT NULL,
+    message         TEXT         NOT NULL,
+    target_url      VARCHAR(255) NOT NULL,
+    item_id         UUID,
+    claim_id        UUID,
+    is_read         BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE notifications IS 'Riwayat notifikasi user untuk chat dan klaim';
+
+
+
 -- TABEL CATEGORIES
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -256,6 +293,15 @@ CREATE INDEX IF NOT EXISTS idx_chats_receiver_id    ON chats(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_chat_id    ON chat_messages(chat_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_sender_id  ON chat_messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_sent_at    ON chat_messages(sent_at);
+
+-- email_verifications
+CREATE INDEX IF NOT EXISTS idx_email_verifications_user_id      ON email_verifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_email_verifications_token_hash   ON email_verifications(token_hash);
+
+-- notifications
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id      ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read      ON notifications(is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at   ON notifications(created_at);
 
 
 -- ------------------------------------------------------------

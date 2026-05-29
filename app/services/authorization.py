@@ -12,7 +12,7 @@ class AuthorizationPolicy:
 
     @staticmethod
     def can_moderate_claim(claim: Claim, user: User) -> bool:
-        return claim.item.owner_id == user.id or user.role == UserRole.ADMIN.value
+        return claim.item.owner_id == user.id or claim.claimant_id == user.id or user.role == UserRole.ADMIN.value
 
     @staticmethod
     def can_chat(claim: Claim, user: User) -> bool:

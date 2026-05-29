@@ -12,8 +12,10 @@ import Chat from './pages/Chat';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
+import Notifications from './pages/Notifications';
 
 export default function App() {
   return (
@@ -21,6 +23,7 @@ export default function App() {
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
@@ -31,6 +34,7 @@ export default function App() {
         <Route path="/claims/:id" element={<Claim />} />
         <Route path="/messages" element={<Chat />} />
         <Route path="/messages/:claimId" element={<Chat />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
 

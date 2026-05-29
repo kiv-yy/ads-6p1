@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app import schemas
 from app.db.database import get_db
 from app.dependencies import ApiError, get_dev_current_user
-from app.models import Claim, ItemStatus, ItemType, User, UserRole
+from app.models import Claim, ClaimStatus, ItemStatus, ItemType, User, UserRole
 from app.services.authorization import AuthorizationPolicy
 from app.services.claims import ClaimRepository
 from app.services.posts import ItemRepository
@@ -26,10 +26,8 @@ def create_claim(
         raise ApiError.not_found("Item")
     if item.owner_id == current_user.id:
         raise ApiError.bad_request("You cannot claim your own item")
-    if item.type != ItemType.FOUND.value:
-        raise ApiError.bad_request("Only found items can be claimed")
     if item.status != ItemStatus.OPEN.value:
-        raise ApiError.bad_request("Only active found items can be claimed")
+        raise ApiError.bad_request("Only active items can be claimed")
     claims = ClaimRepository(db)
     if claims.get_active_for_item_and_claimant(item.id, current_user.id):
         raise ApiError.bad_request("You already have an active claim for this item")
@@ -90,5 +88,10 @@ def update_claim_status(
     if not claim:
         raise ApiError.not_found("Claim")
     if not AuthorizationPolicy.can_moderate_claim(claim, current_user):
-        raise ApiError.forbidden("Only item owner can moderate claims")
+        raise ApiError.forbidden("Only item owner, admin, or the claimant can cancel claims")
+        
+    # Security constraint: Claimant can ONLY reject/cancel, not accept!
+    if current_user.id == claim.claimant_id and claim_in.status != ClaimStatus.REJECTED:
+        raise ApiError.forbidden("Claimant can only cancel/reject their own claim")
+        
     return claims.update_status(claim, claim_in.status)

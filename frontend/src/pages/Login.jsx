@@ -20,7 +20,7 @@ export default function Login() {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError('Email atau password salah. Silakan coba lagi.');
+      setError(err.response?.data?.detail || 'Email atau password salah. Silakan coba lagi.');
       console.error(err);
     } finally {
       setLoading(false);

@@ -24,9 +24,8 @@ class UserBase(BaseModel):
     @field_validator("email")
     @classmethod
     def validate_ipb_email(cls, value: str) -> str:
-        allowed_domains = ("@apps.ipb.ac.id", "@ipb.ac.id", "@student.ipb.ac.id")
-        if not value.lower().endswith(allowed_domains):
-            raise ValueError("Gunakan email institusi IPB.")
+        if not value.lower().endswith("@apps.ipb.ac.id"):
+            raise ValueError("Gunakan email institusi IPB dengan domain @apps.ipb.ac.id.")
         return value.lower()
 
 
@@ -77,6 +76,28 @@ class UserRead(UserBase):
     @property
     def is_admin(self) -> bool:
         return self.role == UserRole.ADMIN
+
+
+class RegisterResponse(BaseModel):
+    user: UserRead
+    message: str
+    verification_url: str | None = None
+
+
+class VerifyEmailResponse(BaseModel):
+    message: str
+    user: UserRead
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def validate_ipb_email(cls, value: str) -> str:
+        if not value.lower().endswith("@apps.ipb.ac.id"):
+            raise ValueError("Gunakan email institusi IPB dengan domain @apps.ipb.ac.id.")
+        return value.lower()
 
 
 class UserModerationUpdate(BaseModel):

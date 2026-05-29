@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle } from "lucide-react";
 import { useParams, Link } from 'react-router-dom';
-import { Search, Send, MapPin, MoreVertical, ChevronLeft, Package, User } from 'lucide-react';
+import { MessageCircle, Search, Send, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
 import { Card, Button, Badge } from '../components/UI';
@@ -54,6 +53,7 @@ export default function Chat() {
 
       ws.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        if (!data.id) return;
         setMessages((prev) => [...prev, data]);
       };
 
@@ -118,16 +118,16 @@ export default function Chat() {
                 )}
               >
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                  {claim.item_user_id === user.id ? claim.claim_user?.full_name?.charAt(0) : claim.item?.user?.full_name?.charAt(0)}
+                  {claim.item_user_id === user.id ? claim.claim_user?.full_name?.charAt(0) : (claim.item?.user?.full_name || claim.item?.owner?.full_name)?.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                     <p className="font-bold text-gray-900 text-sm truncate">
-                      {claim.item_user_id === user.id ? claim.claim_user?.full_name : claim.item?.user?.full_name}
+                      {claim.item_user_id === user.id ? claim.claim_user?.full_name : (claim.item?.user?.full_name || claim.item?.owner?.full_name)}
                     </p>
                     <span className="text-[10px] text-gray-400">10:30</span>
                   </div>
-                  <p className="text-xs text-gray-500 truncate">{claim.status === 'PENDING' ? 'Menunggu verifikasi' : 'Terverifikasi'}</p>
+                  <p className="text-xs text-gray-500 truncate">{claim.status === 'pending' ? 'Menunggu verifikasi' : claim.status === 'diterima' ? 'Terverifikasi' : 'Ditolak'}</p>
                 </div>
               </Link>
             ))
@@ -151,11 +151,11 @@ export default function Chat() {
                   <ChevronLeft size={24} />
                 </Link>
                 <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-bold text-ipb-green">
-                  {activeClaim?.item_user_id === user.id ? activeClaim?.claim_user?.full_name?.charAt(0) : activeClaim?.item?.user?.full_name?.charAt(0)}
+                  {activeClaim?.item_user_id === user.id ? activeClaim?.claim_user?.full_name?.charAt(0) : (activeClaim?.item?.user?.full_name || activeClaim?.item?.owner?.full_name)?.charAt(0)}
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">
-                    {activeClaim?.item_user_id === user.id ? activeClaim?.claim_user?.full_name : activeClaim?.item?.user?.full_name}
+                    {activeClaim?.item_user_id === user.id ? activeClaim?.claim_user?.full_name : (activeClaim?.item?.user?.full_name || activeClaim?.item?.owner?.full_name)}
                     {activeClaim?.item?.type && <Badge className="ml-2 py-0.5 scale-75" variant={activeClaim.item.type.toLowerCase()}>{activeClaim.item.type}</Badge>}
                   </h3>
                   <p className="text-xs text-gray-500">{activeClaim?.item?.name || 'Loading...'}</p>
@@ -192,7 +192,7 @@ export default function Chat() {
                 </div>
               ))}
               
-              {activeClaim?.status === 'PENDING' && (
+              {activeClaim?.status === 'pending' && (
                 <div className="flex justify-center p-4">
                   <div className="bg-yellow-50 text-yellow-700 text-xs px-4 py-2 rounded-xl border border-yellow-100">
                     Status: Menunggu verifikasi

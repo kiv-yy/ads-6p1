@@ -120,9 +120,12 @@ export default function CreateReport() {
                 <option value="">Pilih kategori</option>
                 <option value="Elektronik">Elektronik</option>
                 <option value="Dompet / Tas">Dompet / Tas</option>
+                <option value="Kartu Identitas">Kartu Identitas</option>
                 <option value="Kunci">Kunci</option>
+                <option value="Pakaian">Pakaian</option>
                 <option value="Buku">Buku</option>
                 <option value="Aksesoris">Aksesoris</option>
+                <option value="Lainnya">Lainnya</option>
               </select>
             </div>
             
