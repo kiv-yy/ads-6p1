@@ -10,6 +10,7 @@ venv/
 *.db
 *.sqlite
 *.sqlite3
+app/static/uploads/
 
 # Node / Vite
 logs

@@ -47,8 +47,13 @@ export default function Chat() {
       fetchChatInfo();
 
       // WebSocket Connection
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/claims/${claimId}/chat?current_user_id=${user.id}`;
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const wsBaseUrl = apiUrl.replace(/^http/, 'ws').replace(/\/$/, '');
+      const token = localStorage.getItem('token');
+      const identityQuery = token
+        ? `token=${encodeURIComponent(token)}`
+        : `current_user_id=${encodeURIComponent(user.id)}`;
+      const wsUrl = `${wsBaseUrl}/ws/claims/${claimId}/chat?${identityQuery}`;
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onmessage = (event) => {

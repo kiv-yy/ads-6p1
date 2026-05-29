@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
+from app.core.config import get_settings
 from app.db.database import Base, engine, seed_default_categories
 from app.internal import admin
 from app.models import AdminAction, Category, Chat, ChatMessage, Claim, Item, PostImage, Report, User
@@ -12,6 +13,7 @@ from app.routers import categories, chat, claims, notifications, posts, reports,
 Path("app/static/uploads").mkdir(parents=True, exist_ok=True)
 Base.metadata.create_all(bind=engine)
 seed_default_categories()
+settings = get_settings()
 
 app = FastAPI(
     title="IPB Lost & Found System",
@@ -21,10 +23,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

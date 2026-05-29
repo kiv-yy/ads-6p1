@@ -46,8 +46,8 @@ export const Sidebar = () => {
             to={item.path}
             className={cn(
               "flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-medium transition-all duration-300",
-              pathname === item.path 
-                ? "bg-white text-ipb-green shadow-lg shadow-ipb-green-dark/20" 
+              pathname === item.path
+                ? "bg-white text-ipb-green shadow-lg shadow-ipb-green-dark/20"
                 : "text-white/75 hover:bg-white/10 hover:text-white"
             )}
           >

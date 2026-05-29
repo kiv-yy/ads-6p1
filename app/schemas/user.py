@@ -100,6 +100,27 @@ class ResendVerificationRequest(BaseModel):
         return value.lower()
 
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def validate_ipb_email(cls, value: str) -> str:
+        if not value.lower().endswith("@apps.ipb.ac.id"):
+            raise ValueError("Hanya untuk email IPB dengan domain @apps.ipb.ac.id.")
+        return value.lower()
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(min_length=10)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class PasswordResetResponse(BaseModel):
+    message: str
+    reset_url: str | None = None
+
+
 class UserModerationUpdate(BaseModel):
     is_blocked: bool
     notes: str | None = Field(default=None, max_length=1000)

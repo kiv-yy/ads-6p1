@@ -58,5 +58,9 @@ class UserRepository(BaseRepository):
         user.account_status = AccountStatus.BANNED.value if is_blocked else AccountStatus.ACTIVE.value
         return self.save(user)
 
+    def activate(self, user: User) -> User:
+        user.account_status = AccountStatus.ACTIVE.value
+        return self.save(user)
+
     def block(self, user: User) -> User:
         return self.set_blocked(user, True)

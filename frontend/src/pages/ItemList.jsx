@@ -112,8 +112,8 @@ export default function ItemList() {
                   onClick={() => setCategory(cat)}
                   className={cn(
                     "px-4 py-2 rounded-xl text-sm font-medium transition-all border",
-                    activeCategory === cat 
-                      ? "bg-ipb-green text-white border-ipb-green" 
+                    activeCategory === cat
+                      ? "bg-ipb-green text-white border-ipb-green"
                       : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                   )}
                 >

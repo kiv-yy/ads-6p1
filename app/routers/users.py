@@ -10,7 +10,8 @@ from app.core.security import AuthService, create_access_token
 from app.db.database import get_db
 from app.dependencies import ApiError, get_dev_current_user
 from app.models import AccountStatus, User
-from app.services.email_verification import EmailVerificationRepository
+from app.services.email_verification import EmailDeliveryError, EmailVerificationRepository
+from app.services.password_reset import PasswordResetRepository
 from app.services.user_service import UserRepository
 
 
@@ -26,10 +27,14 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)) -> sche
     if users.get_by_nim(user_in.nim):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="NIM already registered")
     user = users.create(user_in)
-    verification_url = EmailVerificationRepository(db).create_and_send(user)
+    try:
+        verification_url = EmailVerificationRepository(db).create_and_send(user)
+    except EmailDeliveryError:
+        verification_url = None
+    message = "Pendaftaran berhasil. Silakan verifikasi email @apps.ipb.ac.id sebelum login."
     return schemas.RegisterResponse(
         user=user,
-        message="Pendaftaran berhasil. Silakan verifikasi email @apps.ipb.ac.id sebelum login.",
+        message=message,
         verification_url=verification_url,
     )
 
@@ -76,7 +81,13 @@ def resend_verification(
         return schemas.RegisterResponse(user=user, message="Email sudah diverifikasi.", verification_url=None)
     if user.account_status == AccountStatus.BANNED.value:
         raise ApiError.forbidden("User is blocked")
-    verification_url = EmailVerificationRepository(db).create_and_send(user)
+    try:
+        verification_url = EmailVerificationRepository(db).create_and_send(user)
+    except EmailDeliveryError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Email verifikasi belum berhasil dikirim. Silakan coba lagi beberapa saat lagi.",
+        ) from error
     return schemas.RegisterResponse(
         user=user,
         message="Link verifikasi baru sudah dikirim.",
@@ -84,6 +95,31 @@ def resend_verification(
     )
 
 
+@router.post("/auth/forgot-password", response_model=schemas.PasswordResetResponse, tags=["Auth"])
+def forgot_password(
+    payload: schemas.PasswordResetRequest,
+    db: Session = Depends(get_db),
+) -> schemas.PasswordResetResponse:
+    user = UserRepository(db).get_by_email(str(payload.email))
+    try:
+        reset_url = PasswordResetRepository(db).create_and_send(user) if user else None
+    except EmailDeliveryError:
+        reset_url = None
+    return schemas.PasswordResetResponse(
+        message="Jika email terdaftar, link reset password telah dikirim ke email IPB kamu.",
+        reset_url=reset_url,
+    )
+
+
+@router.post("/auth/reset-password", response_model=schemas.PasswordResetResponse, tags=["Auth"])
+def reset_password(
+    payload: schemas.PasswordResetConfirm,
+    db: Session = Depends(get_db),
+) -> schemas.PasswordResetResponse:
+    user = PasswordResetRepository(db).reset_password(payload.token, payload.new_password)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Link reset password tidak valid atau sudah kedaluwarsa.")
+    return schemas.PasswordResetResponse(message="Password berhasil diubah. Silakan login dengan password baru.")
 @router.get("/users/me", response_model=schemas.UserRead)
 def read_me(current_user: User = Depends(get_dev_current_user)) -> User:
     return current_user

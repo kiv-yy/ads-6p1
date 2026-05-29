@@ -20,7 +20,6 @@ class ClaimRepository(BaseRepository):
             status=ClaimStatus.ACCEPTED.value,  # Set directly to accepted
         )
         saved_claim = self.save(claim)
-
         # Flag item status to in progress
         saved_claim.item.status = ItemStatus.IN_PROGRESS.value
         

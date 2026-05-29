@@ -86,7 +86,17 @@ Pendaftaran hanya menerima email dengan domain `@apps.ipb.ac.id`. Akun baru dibu
 GET /auth/verify-email?token=...
 ```
 
-Untuk email sungguhan, isi konfigurasi SMTP di `.env`. Kalau SMTP belum diisi, link verifikasi akan muncul di response register dan log backend agar tetap mudah dites lokal.
+Untuk email sungguhan, isi konfigurasi SMTP di `.env`. 
+Untuk email sungguhan di Railway, gunakan Resend melalui HTTPS API karena SMTP diblokir pada plan Railway non-Pro:
+
+```env
+RESEND_API_KEY=re_xxxxxxxxx
+RESEND_FROM_EMAIL=IPB Lost & Found <noreply@lostfoundipb.my.id>
+```
+
+Alamat pengirim harus berasal dari domain yang sudah diverifikasi di Resend agar email dapat dikirim ke mahasiswa IPB. Kalau Resend maupun SMTP belum diisi, link verifikasi akan muncul di response register dan log backend agar tetap mudah dites lokal.
+
+Domain non-IPB tetap ditolak saat pendaftaran.
 
 ## Realtime Chat E2EE
 

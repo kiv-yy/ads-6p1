@@ -111,7 +111,6 @@ export default function ItemDetail() {
       setActionLoading(false);
     }
   };
-
   const getClaimStatusLabel = (status) => ({
     pending: 'Menunggu',
     diterima: 'Diterima',

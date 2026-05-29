@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Input } from '../components/UI';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export default function Register() {
   const { register } = useAuth();
@@ -15,18 +16,41 @@ export default function Register() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
+  const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.email.toLowerCase().endsWith('@apps.ipb.ac.id')) {
+      setEmailError('Hanya untuk email IPB dengan domain @apps.ipb.ac.id.');
+      return;
+    }
     setLoading(true);
     setError('');
+    setEmailError('');
     setSuccess(null);
     try {
       const result = await register(formData);
-      setSuccess(result);
+      if (result.verification_url) {
+        setSuccess(result);
+      } else {
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email.toLowerCase())}`, {
+          replace: true,
+          state: { fromRegister: true },
+        });
+      }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Gagal mendaftar. Silakan coba lagi.');
+      const message = getApiErrorMessage(err, 'Gagal mendaftar. Silakan coba lagi.');
+      if (message.toLowerCase().includes('email') && message.toLowerCase().includes('ipb')) {
+        setEmailError('Hanya untuk email IPB dengan domain @apps.ipb.ac.id.');
+      } else if (message.toLowerCase().includes('email already registered')) {
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email.toLowerCase())}`, {
+          replace: true,
+          state: { fromRegister: true },
+        });
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -84,9 +108,14 @@ export default function Register() {
               type="email" 
               placeholder="nama@apps.ipb.ac.id" 
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => {
+                setFormData({...formData, email: e.target.value});
+                setEmailError('');
+              }}
+              error={emailError}
               required
             />
+            {!emailError && <p className="text-xs text-gray-400 ml-1 mt-2">Hanya untuk email IPB: @apps.ipb.ac.id</p>}
           </div>
           <div className="md:col-span-2">
             <Input 

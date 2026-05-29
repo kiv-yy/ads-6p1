@@ -6,4 +6,5 @@ python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 bcrypt<4.1
 psycopg2-binary>=2.9.9
+requests>=2.32.0
 pytest>=8.0.0
