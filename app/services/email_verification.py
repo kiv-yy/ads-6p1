@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
+from html import escape
 from hashlib import sha256
 import logging
 from secrets import token_urlsafe
@@ -33,24 +34,39 @@ class EmailService:
     def _is_smtp_configured(self) -> bool:
         return bool(self.settings.smtp_host and self.settings.smtp_username and self.settings.smtp_password)
 
-    def send_email(self, recipient: str, subject: str, content: str, dev_label: str, dev_url: str) -> None:
+    def send_email(
+        self,
+        recipient: str,
+        subject: str,
+        content: str,
+        dev_label: str,
+        dev_url: str,
+        html_content: str | None = None,
+    ) -> None:
         if self.settings.resend_api_key:
-            self._send_via_resend(recipient=recipient, subject=subject, content=content)
+            self._send_via_resend(
+                recipient=recipient,
+                subject=subject,
+                content=content,
+                html_content=html_content,
+            )
             return
 
         if not self._is_smtp_configured():
             print(f"[DEV {dev_label}] {recipient}: {dev_url}")
             return
 
-        self._send_via_smtp(recipient=recipient, subject=subject, content=content)
+        self._send_via_smtp(recipient=recipient, subject=subject, content=content, html_content=html_content)
 
-    def _send_via_resend(self, recipient: str, subject: str, content: str) -> None:
+    def _send_via_resend(self, recipient: str, subject: str, content: str, html_content: str | None = None) -> None:
         payload = {
             "from": self.settings.resend_from_email,
             "to": [recipient],
             "subject": subject,
             "text": content,
         }
+        if html_content:
+            payload["html"] = html_content
         try:
             response = requests.post(
                 "https://api.resend.com/emails",
@@ -73,12 +89,14 @@ class EmailService:
             logger.error("Resend email delivery request failed: %s.", type(error).__name__)
             raise EmailDeliveryError("Layanan email tidak dapat dihubungi.") from error
 
-    def _send_via_smtp(self, recipient: str, subject: str, content: str) -> None:
+    def _send_via_smtp(self, recipient: str, subject: str, content: str, html_content: str | None = None) -> None:
         message = EmailMessage()
         message["Subject"] = subject
         message["From"] = self.settings.smtp_from_email
         message["To"] = recipient
         message.set_content(content)
+        if html_content:
+            message.add_alternative(html_content, subtype="html")
 
         try:
             with smtplib.SMTP(
@@ -94,18 +112,47 @@ class EmailService:
             logger.error("SMTP email delivery failed: %s.", type(error).__name__)
             raise EmailDeliveryError("Layanan email tidak dapat dihubungi.") from error
 
-    def send_verification_email(self, recipient: str, verification_url: str) -> None:
+    def send_verification_email(self, recipient: str, verification_url: str, full_name: str) -> None:
+        safe_name = full_name.strip() or "Pengguna"
+        escaped_name = escape(safe_name)
+        escaped_url = escape(verification_url)
+        text_content = (
+            f"Yth. {safe_name}\n\n"
+            "Terima kasih telah mendaftarkan akun pada platform Lost & Found IPB. "
+            "Untuk menyelesaikan proses pendaftaran dan memastikan validitas alamat email Anda, "
+            "silakan melakukan aktivasi akun melalui tautan di bawah ini:\n\n"
+            "Klik di Sini untuk Aktivasi Akun\n"
+            f"{verification_url}\n\n"
+            "Tautan di atas hanya dapat digunakan satu kali dan akan kedaluwarsa dalam waktu 60 menit. "
+            "Jika tautan tersebut tidak dapat diklik, Anda dapat menyalin dan menempelkan URL berikut "
+            "pada peramban (browser) Anda:\n"
+            f"{verification_url}\n\n"
+            "Apabila Anda tidak merasa melakukan pendaftaran ini, mohon abaikan email ini.\n\n"
+            "Terima kasih atas perhatian dan kerja sama Anda.\n\n"
+            "Salam hormat,\n"
+            "Tim Pengembang Lost & Found IPB"
+        )
+        html_content = (
+            f"<p>Yth. {escaped_name}</p>"
+            "<p>Terima kasih telah mendaftarkan akun pada platform Lost &amp; Found IPB. "
+            "Untuk menyelesaikan proses pendaftaran dan memastikan validitas alamat email Anda, "
+            "silakan melakukan aktivasi akun melalui tautan di bawah ini:</p>"
+            f"<p><a href=\"{escaped_url}\">Klik di Sini untuk Aktivasi Akun</a></p>"
+            "<p>Tautan di atas hanya dapat digunakan satu kali dan akan kedaluwarsa dalam waktu 60 menit. "
+            "Jika tautan tersebut tidak dapat diklik, Anda dapat menyalin dan menempelkan URL berikut "
+            "pada peramban (browser) Anda:</p>"
+            f"<p>{escaped_url}</p>"
+            "<p>Apabila Anda tidak merasa melakukan pendaftaran ini, mohon abaikan email ini.</p>"
+            "<p>Terima kasih atas perhatian dan kerja sama Anda.</p>"
+            "<p>Salam hormat,<br>Tim Pengembang Lost &amp; Found IPB</p>"
+        )
         self.send_email(
             recipient=recipient,
             subject="Verifikasi Email IPB Lost & Found",
-            content=(
-                "Halo,\n\n"
-                "Klik link berikut untuk memverifikasi akun IPB Lost & Found kamu:\n"
-                f"{verification_url}\n\n"
-                "Jika kamu tidak merasa mendaftar, abaikan email ini."
-            ),
+            content=text_content,
             dev_label="EMAIL VERIFICATION",
             dev_url=verification_url,
+            html_content=html_content,
         )
 
     def send_password_reset_email(self, recipient: str, reset_url: str) -> None:
@@ -160,7 +207,7 @@ class EmailVerificationRepository(BaseRepository):
     def create_and_send(self, user: User) -> str | None:
         _, token = self.create_token(user)
         verification_url = self.build_verification_url(token)
-        self.email_service.send_verification_email(user.email, verification_url)
+        self.email_service.send_verification_email(user.email, verification_url, user.full_name)
         return None if self.email_service.is_configured() else verification_url
 
     def verify(self, token: str) -> User | None:
