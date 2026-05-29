@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Mail, RefreshCw } from 'lucide-react';
+import { CheckCircle, Mail, RefreshCw } from 'lucide-react';
 import api from '../api/axios';
 import { Button, Card } from '../components/UI';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -104,15 +104,17 @@ export default function VerifyEmail() {
         <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold ${
           status === 'success' ? 'bg-green-100 text-green-700' : status === 'error' ? 'bg-red-100 text-red-700' : 'bg-ipb-green text-white'
         }`}>
-          {status === 'success' ? 'OK' : status === 'error' ? '!' : '...'}
+          {status === 'success' ? <CheckCircle size={34} /> : status === 'error' ? '!' : '...'}
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-gray-900">Verifikasi Email</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {status === 'success' ? 'Anda Sudah Terverifikasi' : 'Verifikasi Email'}
+          </h1>
           <p className="text-gray-500">{message}</p>
         </div>
         <Link to="/login" className="block">
           <Button className="w-full py-3" disabled={status === 'loading'}>
-            Masuk ke Akun
+            Kembali ke Login
           </Button>
         </Link>
       </Card>
