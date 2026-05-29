@@ -90,16 +90,10 @@ Untuk email sungguhan di Railway, gunakan Resend melalui HTTPS API karena SMTP d
 
 ```env
 RESEND_API_KEY=re_xxxxxxxxx
-RESEND_FROM_EMAIL=IPB Lost & Found <onboarding@resend.dev>
+RESEND_FROM_EMAIL=IPB Lost & Found <noreply@lostfoundipb.my.id>
 ```
 
-Alamat `onboarding@resend.dev` hanya untuk pengujian sesuai batasan akun Resend. Agar dapat mengirim ke mahasiswa IPB, gunakan alamat pengirim dari domain yang sudah diverifikasi di Resend. Kalau Resend maupun SMTP belum diisi, link verifikasi akan muncul di response register dan log backend agar tetap mudah dites lokal.
-
-Untuk demo tanpa pengiriman email, aktifkan akun IPB secara otomatis:
-
-```env
-AUTO_VERIFY_IPB_EMAIL=true
-```
+Alamat pengirim harus berasal dari domain yang sudah diverifikasi di Resend agar email dapat dikirim ke mahasiswa IPB. Kalau Resend maupun SMTP belum diisi, link verifikasi akan muncul di response register dan log backend agar tetap mudah dites lokal.
 
 Domain non-IPB tetap ditolak saat pendaftaran.
 

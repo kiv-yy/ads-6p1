@@ -27,19 +27,11 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)) -> sche
     if users.get_by_nim(user_in.nim):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="NIM already registered")
     user = users.create(user_in)
-    if settings.auto_verify_ipb_email:
-        user = users.activate(user)
-        return schemas.RegisterResponse(
-            user=user,
-            message="Akun kampus otomatis aktif untuk keperluan demo. Kamu sudah bisa login.",
-            verification_url=None,
-        )
     try:
         verification_url = EmailVerificationRepository(db).create_and_send(user)
-        message = "Pendaftaran berhasil. Silakan verifikasi email @apps.ipb.ac.id sebelum login."
     except EmailDeliveryError:
         verification_url = None
-        message = "Pendaftaran berhasil, tetapi email verifikasi belum berhasil dikirim. Silakan gunakan kirim ulang email verifikasi."
+    message = "Pendaftaran berhasil. Silakan verifikasi email @apps.ipb.ac.id sebelum login."
     return schemas.RegisterResponse(
         user=user,
         message=message,
@@ -61,8 +53,6 @@ def login(
         )
     if user.account_status == AccountStatus.BANNED.value:
         raise ApiError.forbidden("User is blocked")
-    if user.account_status != AccountStatus.ACTIVE.value and settings.auto_verify_ipb_email:
-        user = UserRepository(db).activate(user)
     if user.account_status != AccountStatus.ACTIVE.value:
         raise ApiError.forbidden("Email belum diverifikasi. Silakan cek email IPB kamu.")
 
@@ -91,13 +81,6 @@ def resend_verification(
         return schemas.RegisterResponse(user=user, message="Email sudah diverifikasi.", verification_url=None)
     if user.account_status == AccountStatus.BANNED.value:
         raise ApiError.forbidden("User is blocked")
-    if settings.auto_verify_ipb_email:
-        user = UserRepository(db).activate(user)
-        return schemas.RegisterResponse(
-            user=user,
-            message="Akun kampus otomatis aktif untuk keperluan demo. Kamu sudah bisa login.",
-            verification_url=None,
-        )
     try:
         verification_url = EmailVerificationRepository(db).create_and_send(user)
     except EmailDeliveryError as error:

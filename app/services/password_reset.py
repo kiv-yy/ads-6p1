@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from secrets import token_urlsafe
 
@@ -27,6 +27,15 @@ class PasswordResetRepository(BaseRepository):
     def hash_token(token: str) -> str:
         return sha256(token.encode("utf-8")).hexdigest()
 
+    @staticmethod
+    def utc_now() -> datetime:
+        return datetime.now(timezone.utc)
+
+    @classmethod
+    def is_expired(cls, expires_at: datetime) -> bool:
+        now = cls.utc_now() if expires_at.tzinfo else datetime.now()
+        return expires_at < now
+
     def build_reset_url(self, token: str) -> str:
         return f"{self.settings.frontend_url.rstrip('/')}/reset-password?token={token}"
 
@@ -35,7 +44,7 @@ class PasswordResetRepository(BaseRepository):
         reset = PasswordResetToken(
             user_id=user.id,
             token_hash=self.hash_token(token),
-            expires_at=datetime.utcnow() + timedelta(minutes=self.settings.password_reset_expire_minutes),
+            expires_at=self.utc_now() + timedelta(minutes=self.settings.password_reset_expire_minutes),
         )
         self.db.add(reset)
         self.db.commit()
@@ -49,10 +58,10 @@ class PasswordResetRepository(BaseRepository):
             .filter(PasswordResetToken.token_hash == self.hash_token(token), PasswordResetToken.used_at.is_(None))
             .first()
         )
-        if not reset or reset.expires_at < datetime.utcnow():
+        if not reset or self.is_expired(reset.expires_at):
             return None
         reset.user.hashed_password = self.password_service.hash(new_password)
-        reset.used_at = datetime.utcnow()
+        reset.used_at = self.utc_now()
         self.db.commit()
         self.db.refresh(reset.user)
         return reset.user

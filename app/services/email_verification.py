@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from hashlib import sha256
-import json
 import logging
 from secrets import token_urlsafe
 import smtplib
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+
+import requests
 
 from sqlalchemy.orm import Session
 
@@ -46,31 +45,31 @@ class EmailService:
         self._send_via_smtp(recipient=recipient, subject=subject, content=content)
 
     def _send_via_resend(self, recipient: str, subject: str, content: str) -> None:
-        payload = json.dumps(
-            {
-                "from": self.settings.resend_from_email,
-                "to": [recipient],
-                "subject": subject,
-                "text": content,
-            }
-        ).encode("utf-8")
-        request = Request(
-            "https://api.resend.com/emails",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {self.settings.resend_api_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
+        payload = {
+            "from": self.settings.resend_from_email,
+            "to": [recipient],
+            "subject": subject,
+            "text": content,
+        }
         try:
-            with urlopen(request, timeout=self.settings.smtp_timeout_seconds) as response:
-                if response.status >= 300:
-                    raise EmailDeliveryError("Resend menolak pengiriman email.")
-        except HTTPError as error:
-            logger.error("Resend rejected email delivery with HTTP status %s.", error.code)
+            response = requests.post(
+                "https://api.resend.com/emails",
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {self.settings.resend_api_key}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "ipb-lost-found/1.0",
+                },
+                timeout=self.settings.smtp_timeout_seconds,
+            )
+            response.raise_for_status()
+        except requests.HTTPError as error:
+            response = error.response
+            status_code = response.status_code if response is not None else "unknown"
+            detail = response.text if response is not None else str(error)
+            logger.error("Resend rejected email delivery with HTTP status %s: %s", status_code, detail)
             raise EmailDeliveryError("Resend menolak pengiriman email.") from error
-        except (URLError, TimeoutError, OSError) as error:
+        except requests.RequestException as error:
             logger.error("Resend email delivery request failed: %s.", type(error).__name__)
             raise EmailDeliveryError("Layanan email tidak dapat dihubungi.") from error
 
@@ -134,12 +133,21 @@ class EmailVerificationRepository(BaseRepository):
     def hash_token(token: str) -> str:
         return sha256(token.encode("utf-8")).hexdigest()
 
+    @staticmethod
+    def utc_now() -> datetime:
+        return datetime.now(timezone.utc)
+
+    @classmethod
+    def is_expired(cls, expires_at: datetime) -> bool:
+        now = cls.utc_now() if expires_at.tzinfo else datetime.now()
+        return expires_at < now
+
     def create_token(self, user: User) -> tuple[EmailVerification, str]:
         token = token_urlsafe(32)
         verification = EmailVerification(
             user_id=user.id,
             token_hash=self.hash_token(token),
-            expires_at=datetime.utcnow() + timedelta(minutes=self.settings.email_verification_expire_minutes),
+            expires_at=self.utc_now() + timedelta(minutes=self.settings.email_verification_expire_minutes),
         )
         self.db.add(verification)
         self.db.commit()
@@ -161,10 +169,10 @@ class EmailVerificationRepository(BaseRepository):
             .filter(EmailVerification.token_hash == self.hash_token(token), EmailVerification.verified_at.is_(None))
             .first()
         )
-        if not verification or verification.expires_at < datetime.utcnow():
+        if not verification or self.is_expired(verification.expires_at):
             return None
 
-        verification.verified_at = datetime.utcnow()
+        verification.verified_at = self.utc_now()
         verification.user.account_status = AccountStatus.ACTIVE.value
         self.db.commit()
         self.db.refresh(verification.user)
