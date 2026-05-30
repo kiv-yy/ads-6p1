@@ -4,7 +4,7 @@ import { Search, Filter, Package, Calendar, MapPin } from 'lucide-react';
 import api from '../api/axios';
 import { Button, Card, Badge } from '../components/UI';
 import { cn } from '../utils/cn';
-import { itemTypeLabel, itemTypeVariant } from '../utils/itemType';
+import { isLostItem, itemTypeLabel, itemTypeVariant } from '../utils/itemType';
 
 const CATEGORIES = ['Semua', 'Elektronik', 'Dompet / Tas', 'Kartu Identitas', 'Kunci', 'Pakaian', 'Lainnya'];
 
@@ -155,9 +155,15 @@ export default function ItemList() {
             <Card key={i} className="h-72 animate-pulse bg-gray-100" />
           ))
         ) : items.length > 0 ? (
-          items.map((item) => (
+          items.map((item) => {
+            const isResolved = item.status === 'selesai';
+
+            return (
             <Link key={item.id} to={`/items/${item.id}`}>
-              <Card className="flex flex-col h-full hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <Card className={cn(
+                "flex flex-col h-full border-2 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1",
+                isLostItem(item.type) ? "border-red-500/70 hover:border-red-500" : "border-ipb-green/70 hover:border-ipb-green"
+              )}>
                 <div className="aspect-video bg-gray-100 relative overflow-hidden shrink-0">
                   {item.image ? (
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -166,10 +172,11 @@ export default function ItemList() {
                       <Package size={56} />
                     </div>
                   )}
-                  <div className="absolute top-3 left-3">
+                  <div className="absolute top-3 left-3 flex flex-col items-start gap-2">
                     <Badge variant={itemTypeVariant(item.type)}>
                       {itemTypeLabel(item.type)}
                     </Badge>
+                    {isResolved && <Badge variant="success">Selesai</Badge>}
                   </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col justify-between">
@@ -190,7 +197,8 @@ export default function ItemList() {
                 </div>
               </Card>
             </Link>
-          ))
+            );
+          })
         ) : (
           <div className="col-span-full py-24 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
             <div className="flex flex-col items-center gap-4 text-gray-400">

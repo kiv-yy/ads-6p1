@@ -5,7 +5,8 @@ import { Plus, Search, ChevronRight, Package } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Badge } from '../components/UI';
 import api from '../api/axios';
-import { itemTypeLabel, itemTypeVariant } from '../utils/itemType';
+import { isLostItem, itemTypeLabel, itemTypeVariant } from '../utils/itemType';
+import { cn } from '../utils/cn';
 
 export default function Home() {
   const { user } = useAuth();
@@ -80,9 +81,15 @@ export default function Home() {
               <Card key={i} className="h-72 animate-pulse bg-gray-100" />
             ))
           ) : items.length > 0 ? (
-            items.map((item) => (
+            items.map((item) => {
+              const isResolved = item.status === 'selesai';
+
+              return (
               <Link key={item.id} to={`/items/${item.id}`} className="group">
-                <Card className="border-2 border-transparent hover:border-gray-50 shadow-soft group hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                <Card className={cn(
+                  "border-2 shadow-soft group hover:shadow-2xl transition-all duration-500 overflow-hidden",
+                  isLostItem(item.type) ? "border-red-500/70 hover:border-red-500" : "border-ipb-green/70 hover:border-ipb-green"
+                )}>
                   <div className="h-44 bg-gray-100 relative group-hover:scale-105 transition-transform duration-500">
                     {item.image ? (
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -91,10 +98,11 @@ export default function Home() {
                         <Package size={56} />
                       </div>
                     )}
-                    <div className="absolute top-4 right-4">
+                    <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
                       <Badge variant={itemTypeVariant(item.type)}>
                         {itemTypeLabel(item.type)}
                       </Badge>
+                      {isResolved && <Badge variant="success">Selesai</Badge>}
                     </div>
                   </div>
                   <div className="p-6 space-y-3">
@@ -109,7 +117,8 @@ export default function Home() {
                   </div>
                 </Card>
               </Link>
-            ))
+              );
+            })
           ) : (
             <div className="col-span-full py-16 text-center bg-white rounded-[2.5rem] border border-gray-100 shadow-soft italic text-gray-400 font-medium">
               Belum ada laporan terbaru
