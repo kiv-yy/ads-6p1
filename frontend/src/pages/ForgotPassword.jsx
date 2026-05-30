@@ -42,7 +42,7 @@ export default function ForgotPassword() {
         </div>
         {result ? (
           <div className="space-y-4">
-            <p className="rounded-2xl border border-green-100 bg-green-50 p-4 text-sm text-green-700">{result.message}</p>
+            <p className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">{result.message}</p>
             {result.reset_url && (
               <a href={result.reset_url} className="block">
                 <Button className="w-full py-3">Buka Link Reset Development</Button>

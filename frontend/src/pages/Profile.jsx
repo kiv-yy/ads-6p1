@@ -139,8 +139,6 @@ export default function Profile() {
               <>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{user?.full_name || 'User IPB'}</h2>
-                  <p className="text-gray-500 font-medium">{user?.faculty || '-'}</p>
-                  <p className="text-sm text-gray-400">{user?.major || '-'}</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-500">
                   <div className="flex items-center gap-2 justify-center md:justify-start">
@@ -186,7 +184,7 @@ export default function Profile() {
               </form>
             )}
             {(profileNotice || (!isEditing && profileError)) && (
-              <p className={`text-sm font-semibold ${profileError ? 'text-red-500' : 'text-green-600'}`}>
+              <p className={`text-sm font-semibold ${profileError ? 'text-red-500' : 'text-blue-600'}`}>
                 {profileError || profileNotice}
               </p>
             )}
@@ -197,7 +195,7 @@ export default function Profile() {
                 <Edit3 size={18} /> Edit Profil
               </Button>
             )}
-            <Button variant="secondary" className="px-6 text-gray-600" onClick={logout}>
+            <Button variant="danger" className="px-6" onClick={logout}>
               <LogOut size={18} /> Keluar
             </Button>
           </div>

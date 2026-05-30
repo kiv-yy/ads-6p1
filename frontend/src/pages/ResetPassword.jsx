@@ -49,7 +49,7 @@ export default function ResetPassword() {
         </div>
         {success ? (
           <div className="space-y-4">
-            <p className="rounded-2xl border border-green-100 bg-green-50 p-4 text-sm text-green-700">{success}</p>
+            <p className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">{success}</p>
             <Link to="/login" className="block">
               <Button className="w-full py-3">Masuk ke Akun</Button>
             </Link>

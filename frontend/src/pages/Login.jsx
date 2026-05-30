@@ -100,7 +100,7 @@ export default function Login() {
                 {resending ? 'Mengirim...' : 'Kirim Ulang Email Verifikasi'}
               </Button>
             )}
-            {info && <p className="text-sm text-green-700 bg-green-50 p-3 rounded-lg border border-green-100">{info}</p>}
+            {info && <p className="text-sm text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-100">{info}</p>}
 
             <Button type="submit" className="w-full py-3 rounded-full" disabled={loading}>
               {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Masuk'}
