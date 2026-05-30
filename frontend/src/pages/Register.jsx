@@ -66,7 +66,7 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout meteor title="Welcome to IPB Lost & Found">
+    <AuthLayout title="Welcome to IPB Lost & Found">
       <div className="w-full max-w-lg space-y-6 animate-in fade-in zoom-in duration-300">
         <div className="text-center space-y-2">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-ipb-green text-2xl font-bold text-white shadow-lg shadow-ipb-green/20">
