@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS users (
     nama            VARCHAR(100)    NOT NULL,
     username        VARCHAR(50)     UNIQUE,
     email_ipb       VARCHAR(150)    NOT NULL UNIQUE,
-    nim             VARCHAR(20)     NOT NULL UNIQUE,
+    nim             VARCHAR(20)     UNIQUE,
     fakultas        VARCHAR(100),
     password        VARCHAR(255)    NOT NULL,
     foto_profile    TEXT,

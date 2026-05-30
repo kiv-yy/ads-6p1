@@ -28,7 +28,7 @@ class User(Base):
     full_name: Mapped[str] = mapped_column("nama", String(100), nullable=False)
     username: Mapped[str | None] = mapped_column(String(50), unique=True, index=True, nullable=True)
     email: Mapped[str] = mapped_column("email_ipb", String(150), unique=True, index=True, nullable=False)
-    nim: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    nim: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True)
     faculty: Mapped[str | None] = mapped_column("fakultas", String(100), nullable=True)
     hashed_password: Mapped[str] = mapped_column("password", String(255), nullable=False)
     profile_photo: Mapped[str | None] = mapped_column("foto_profile", Text, nullable=True)

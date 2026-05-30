@@ -50,8 +50,8 @@ def ensure_user_profile_columns() -> None:
         return
 
     columns = {column["name"] for column in inspector.get_columns("users")}
-    if "username" in columns:
-        return
-
     with engine.begin() as connection:
-        connection.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(50)"))
+        if "username" not in columns:
+            connection.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(50)"))
+        if engine.dialect.name == "postgresql":
+            connection.execute(text("ALTER TABLE users ALTER COLUMN nim DROP NOT NULL"))

@@ -37,7 +37,6 @@ export default function Register() {
         password: formData.password,
         full_name: formData.full_name,
         username: formData.username,
-        nim: formData.username,
         faculty: null,
       });
       navigate(`/verify-email?email=${encodeURIComponent(formData.email.toLowerCase())}`, {

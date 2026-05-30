@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Home as HomeIcon, Search, PlusCircle, MessageCircle, Bell, LayoutDashboard, User } from "lucide-react";
+import { Home as HomeIcon, Search, PlusCircle, MessageCircle, Bell, LayoutDashboard, User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../utils/cn";
 import api from "../api/axios";
 
-export const Sidebar = () => {
+export const Sidebar = ({ collapsed = false, onToggle }) => {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -30,22 +30,43 @@ export const Sidebar = () => {
   }
 
   return (
-    <div className="hidden lg:flex flex-col w-64 bg-ipb-green border-r border-ipb-green-dark/20 min-h-screen fixed left-0 top-0 pt-8 pb-4">
-      <div className="px-8 mb-8 flex items-center gap-3">
+    <div
+      className={cn(
+        "hidden lg:flex flex-col bg-ipb-green border-r border-ipb-green-dark/20 min-h-screen fixed left-0 top-0 pt-8 pb-4 transition-all duration-300",
+        collapsed ? "w-20" : "w-64"
+      )}
+    >
+      <div className={cn("mb-8 flex items-center gap-3", collapsed ? "px-4 justify-center" : "px-8")}>
         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-ipb-green font-bold text-xl">L</div>
-        <div className="leading-tight">
+        <div className={cn("leading-tight overflow-hidden transition-all", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
           <h1 className="font-bold text-white text-lg tracking-tight">Lost&Found</h1>
           <p className="text-[10px] uppercase tracking-widest text-white/60 font-semibold">IPB University</p>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={onToggle}
+        className={cn(
+          "mx-3 mb-4 h-10 rounded-xl text-white/75 hover:bg-white/10 hover:text-white transition-colors flex items-center",
+          collapsed ? "justify-center" : "justify-between px-5"
+        )}
+        aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}
+        title={collapsed ? "Buka sidebar" : "Tutup sidebar"}
+      >
+        {!collapsed && <span className="text-xs font-bold uppercase tracking-wider">Menu</span>}
+        {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+      </button>
 
       <nav className="flex-1 px-3 space-y-1">
         {menuItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
+            title={collapsed ? item.label : undefined}
             className={cn(
-              "flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-medium transition-all duration-300",
+              "flex items-center rounded-xl text-sm font-medium transition-all duration-300",
+              collapsed ? "justify-center px-0 py-3.5" : "gap-3 px-5 py-3.5",
               pathname === item.path
                 ? "bg-white text-ipb-green shadow-lg shadow-ipb-green-dark/20"
                 : "text-white/75 hover:bg-white/10 hover:text-white"
@@ -59,17 +80,24 @@ export const Sidebar = () => {
                 </span>
               )}
             </div>
-            {item.label}
+            {!collapsed && item.label}
           </Link>
         ))}
       </nav>
 
       <div className="p-4 mt-auto">
-        <Link to="/profile" className="bg-white/12 hover:bg-white/20 rounded-2xl p-4 flex items-center gap-3 border border-white/15 transition-colors">
+        <Link
+          to="/profile"
+          title={collapsed ? "Profil" : undefined}
+          className={cn(
+            "bg-white/12 hover:bg-white/20 rounded-2xl flex items-center border border-white/15 transition-colors",
+            collapsed ? "p-2 justify-center" : "p-4 gap-3"
+          )}
+        >
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-ipb-green font-bold">
             {user?.full_name?.charAt(0) || "U"}
           </div>
-          <div className="overflow-hidden">
+          <div className={cn("overflow-hidden", collapsed && "hidden")}>
             <p className="text-sm font-semibold text-white truncate">{user?.full_name || "Guest"}</p>
             <p className="text-[10px] text-white/55 uppercase tracking-wider font-bold">{user?.faculty || "IPB"}</p>
           </div>

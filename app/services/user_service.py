@@ -29,14 +29,12 @@ class UserRepository(BaseRepository):
         self.password_service = password_service or PasswordService()
 
     def create(self, user_in: schemas.UserCreate) -> User:
-        username = user_in.username or user_in.nim
-        nim = user_in.nim or username
         user = User(
             email=user_in.email,
             full_name=user_in.full_name,
-            username=username,
+            username=user_in.username,
             faculty=user_in.faculty,
-            nim=nim,
+            nim=user_in.nim,
             hashed_password=self.password_service.hash(user_in.password),
             account_status=AccountStatus.INACTIVE.value,
         )
