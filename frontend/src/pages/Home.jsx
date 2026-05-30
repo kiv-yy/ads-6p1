@@ -37,15 +37,15 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link to="/report?type=lost" className="group">
-            <Card className="hover:bg-ipb-green p-8 flex items-center justify-between transition-all duration-500 cursor-pointer border-none shadow-soft hover:shadow-2xl hover:shadow-ipb-green/30 group">
+            <Card className="p-8 flex items-center justify-between transition-all duration-500 cursor-pointer border-2 border-transparent hover:border-red-500 shadow-soft hover:shadow-xl group">
               <div className="flex flex-col">
-                <span className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 group-hover:bg-white/20 group-hover:text-white mb-6 transition-all duration-300">
+                <span className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Search size={28} />
                 </span>
-                <h3 className="font-bold text-xl text-gray-800 group-hover:text-white transition-colors duration-300">Saya Kehilangan</h3>
-                <p className="text-gray-400 text-sm group-hover:text-white/80 transition-colors duration-300 mt-1">Laporkan barang kamu yang hilang di kampus</p>
+                <h3 className="font-bold text-xl text-gray-800 transition-colors duration-300">Saya Kehilangan</h3>
+                <p className="text-gray-400 text-sm transition-colors duration-300 mt-1">Laporkan barang kamu yang hilang di kampus</p>
               </div>
-              <ChevronRight size={32} className="text-gray-200 group-hover:text-white/40 transition-all duration-300 translate-x-0 group-hover:translate-x-2" />
+              <ChevronRight size={32} className="text-gray-200 group-hover:text-red-500 transition-all duration-300 translate-x-0 group-hover:translate-x-2" />
             </Card>
           </Link>
 
