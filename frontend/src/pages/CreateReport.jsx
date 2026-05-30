@@ -85,7 +85,7 @@ export default function CreateReport() {
           onClick={() => setType('FOUND')}
           className={cn(
             "flex-1 py-3 rounded-xl font-semibold transition-all",
-            type === 'FOUND' ? "bg-ipb-green text-white shadow-md" : "text-gray-500 hover:bg-gray-50"
+            type === 'FOUND' ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" : "text-gray-500 hover:bg-gray-50"
           )}
         >
           Barang Ditemukan

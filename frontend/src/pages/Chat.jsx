@@ -224,7 +224,7 @@ export default function Chat() {
                   claimId === String(claim.id) && "bg-ipb-green-light"
                 )}
               >
-                <UserAvatar user={getClaimParticipant(claim)} className="w-12 h-12 bg-gray-100 shrink-0" />
+                <UserAvatar user={getClaimParticipant(claim)} className="w-12 h-12 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                     <p className="font-bold text-gray-900 text-sm truncate">
@@ -259,7 +259,7 @@ export default function Chat() {
                 <Link to="/messages" className="lg:hidden p-2 -ml-2 text-gray-500">
                   <ChevronLeft size={24} />
                 </Link>
-                <UserAvatar user={activeClaim ? getClaimParticipant(activeClaim) : null} className="w-10 h-10 bg-gray-100 shrink-0" />
+                <UserAvatar user={activeClaim ? getClaimParticipant(activeClaim) : null} className="w-10 h-10 shrink-0" />
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">
                     {String(activeClaim?.item_user_id) === String(user.id) ? activeClaim?.claim_user?.full_name : (activeClaim?.item?.user?.full_name || activeClaim?.item?.owner?.full_name)}

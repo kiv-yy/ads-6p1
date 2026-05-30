@@ -184,7 +184,7 @@ export default function ItemList() {
             onClick={() => toggleTab('FOUND')}
             className={cn(
               "flex-1 py-2.5 rounded-xl font-semibold transition-all duration-300",
-              activeTab === 'FOUND' ? "bg-ipb-green text-white shadow-md" : "text-gray-500 hover:bg-gray-50"
+              activeTab === 'FOUND' ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" : "text-gray-500 hover:bg-gray-50"
             )}
           >
             Barang Ditemukan
@@ -208,7 +208,7 @@ export default function ItemList() {
             <Link key={item.id} to={`/items/${item.id}`}>
               <Card className={cn(
                 "flex flex-col h-full border-2 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1",
-                isLostItem(item.type) ? "border-red-500/70 hover:border-red-500" : "border-ipb-green/70 hover:border-ipb-green"
+                isLostItem(item.type) ? "border-red-500/70 hover:border-red-500" : "border-emerald-600/70 hover:border-emerald-600"
               )}>
                 <div className="aspect-video bg-gray-100 relative overflow-hidden shrink-0">
                   {item.image ? (

@@ -328,7 +328,7 @@ export default function ItemDetail() {
           <Card className="p-6 space-y-6">
             <h2 className="text-lg font-bold text-gray-900">Identitas Pelapor</h2>
             <div className="flex items-center gap-4">
-              <UserAvatar user={reporter} className="w-14 h-14 bg-gray-100" textClassName="text-lg" />
+              <UserAvatar user={reporter} className="w-14 h-14" textClassName="text-lg" />
               <div>
                 <p className="font-bold text-gray-900">{reporter?.full_name || 'Anonim User'}</p>
                 <p className="text-sm text-gray-500">{reporter?.major || '-'}</p>

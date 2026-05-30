@@ -2,9 +2,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ipb-green: #006B3F;
-  --color-ipb-green-dark: #004d2d;
-  --color-ipb-green-light: rgba(0, 107, 63, 0.08);
+  --color-ipb-green: #003f2a;
+  --color-ipb-green-dark: #002817;
+  --color-ipb-green-light: rgba(0, 63, 42, 0.08);
   
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   
@@ -32,9 +32,9 @@
 }
 
 .active-nav {
-  background: rgba(0, 107, 63, 0.08);
-  color: #006B3F;
-  border-right: 3px solid #006B3F;
+  background: rgba(0, 63, 42, 0.08);
+  color: #003f2a;
+  border-right: 3px solid #003f2a;
 }
 
 .custom-scrollbar::-webkit-scrollbar {

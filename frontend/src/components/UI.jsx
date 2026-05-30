@@ -59,7 +59,7 @@ export const Badge = ({ children, variant = "info" }) => {
     warning: "bg-yellow-50 text-yellow-600",
     danger: "bg-red-50 text-red-600",
     hilang: "bg-red-500 text-white shadow-lg shadow-red-500/30",
-    ditemukan: "bg-ipb-green text-white shadow-lg shadow-ipb-green/30",
+    ditemukan: "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30",
   };
   return (
     <span className={cn("px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider", variants[variant])}>
@@ -72,7 +72,7 @@ export const UserAvatar = ({ user, className, textClassName = "" }) => {
   const initial = user?.full_name?.charAt(0) || user?.username?.charAt(0) || "U";
 
   return (
-    <div className={cn("rounded-full bg-white flex items-center justify-center text-ipb-green font-bold overflow-hidden", className)}>
+    <div className={cn("rounded-full bg-ipb-green flex items-center justify-center text-white font-bold overflow-hidden", className)}>
       {user?.profile_photo ? (
         <img src={user.profile_photo} alt={user.full_name || "Foto profil"} className="w-full h-full object-cover" />
       ) : (

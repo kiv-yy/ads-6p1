@@ -52,15 +52,15 @@ export default function Home() {
           </Link>
 
           <Link to="/report?type=found" className="group">
-            <Card className="p-8 flex items-center justify-between transition-all duration-500 cursor-pointer border-2 border-transparent hover:border-ipb-green shadow-soft hover:shadow-xl group">
+            <Card className="p-8 flex items-center justify-between transition-all duration-500 cursor-pointer border-2 border-transparent hover:border-emerald-600 shadow-soft hover:shadow-xl group">
               <div className="flex flex-col">
-                <span className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <span className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Plus size={28} />
                 </span>
                 <h3 className="font-bold text-xl text-gray-800 transition-colors duration-300">Saya Menemukan</h3>
                 <p className="text-gray-400 text-sm transition-colors duration-300 mt-1">Laporkan barang yang kamu temukan di kampus</p>
               </div>
-              <ChevronRight size={32} className="text-gray-200 group-hover:text-ipb-green transition-all duration-300 translate-x-0 group-hover:translate-x-2" />
+              <ChevronRight size={32} className="text-gray-200 group-hover:text-emerald-600 transition-all duration-300 translate-x-0 group-hover:translate-x-2" />
             </Card>
           </Link>
         </div>
@@ -88,7 +88,7 @@ export default function Home() {
               <Link key={item.id} to={`/items/${item.id}`} className="group">
                 <Card className={cn(
                   "border-2 shadow-soft group hover:shadow-2xl transition-all duration-500 overflow-hidden",
-                  isLostItem(item.type) ? "border-red-500/70 hover:border-red-500" : "border-ipb-green/70 hover:border-ipb-green"
+                  isLostItem(item.type) ? "border-red-500/70 hover:border-red-500" : "border-emerald-600/70 hover:border-emerald-600"
                 )}>
                   <div className="h-44 bg-gray-100 relative group-hover:scale-105 transition-transform duration-500">
                     {item.image ? (
