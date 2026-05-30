@@ -349,7 +349,7 @@ export default function ItemDetail() {
           </Card>
 
           {(notice || error) && (
-            <div className={`rounded-2xl px-4 py-3 text-sm font-semibold ${error ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-700'}`}>
+            <div className={`rounded-2xl px-4 py-3 text-sm font-semibold ${error ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
               {error || notice}
             </div>
           )}
@@ -358,9 +358,9 @@ export default function ItemDetail() {
             {!isOwner ? (
               <>
                 {item.status === 'selesai' ? (
-                  <Card className="p-5 bg-blue-50/50 border-blue-100 border text-center space-y-2">
-                    <p className="font-bold text-blue-800 text-sm">Laporan Selesai</p>
-                    <p className="text-xs text-blue-700">Laporan ini telah diselesaikan dan barang telah berhasil dikembalikan.</p>
+                  <Card className="p-5 bg-green-50/50 border-green-100 border text-center space-y-2">
+                    <p className="font-bold text-green-800 text-sm">Laporan Selesai</p>
+                    <p className="text-xs text-green-700">Laporan ini telah diselesaikan dan barang telah berhasil dikembalikan.</p>
                   </Card>
                 ) : myClaim ? (
                   <Card className="p-5 space-y-4">
@@ -380,11 +380,11 @@ export default function ItemDetail() {
                       )}
                     </div>
                     {activeChatClaim ? (
-                      <Button onClick={() => navigate(`/messages/${activeChatClaim.id}`)} variant="positive" className="w-full py-4 text-base font-bold">
+                      <Button onClick={() => navigate(`/messages/${activeChatClaim.id}`)} className="w-full py-4 text-base font-bold bg-ipb-green">
                         <MessageCircle size={20} /> Chat Pelapor
                       </Button>
                     ) : (
-                      <Button type="button" disabled variant="positive" className="w-full py-4 text-base font-bold opacity-60">
+                      <Button type="button" disabled className="w-full py-4 text-base font-bold bg-ipb-green opacity-60">
                         <MessageCircle size={20} /> Chat Aktif Setelah Klaim Diterima
                       </Button>
                     )}
@@ -407,8 +407,8 @@ export default function ItemDetail() {
                       type="button"
                       onClick={handleCreateClaim}
                       disabled={actionLoading}
-                      variant="positive"
-                      className="w-full py-4 text-base font-bold disabled:opacity-60"
+                      variant="outline"
+                      className="w-full py-4 text-base font-bold bg-white disabled:opacity-60"
                     >
                       <ShieldCheck size={20} /> {actionLoading ? 'Mengirim...' : claimCtaLabel}
                     </Button>
@@ -418,9 +418,9 @@ export default function ItemDetail() {
             ) : (
               <>
                 {item.status === 'selesai' ? (
-                  <Card className="p-5 bg-blue-50/50 border-blue-100 border text-center space-y-2">
-                    <p className="font-bold text-blue-800 text-sm">Laporan Selesai</p>
-                    <p className="text-xs text-blue-700">Kamu telah menyelesaikan laporan ini. Terima kasih atas partisipasimu!</p>
+                  <Card className="p-5 bg-green-50/50 border-green-100 border text-center space-y-2">
+                    <p className="font-bold text-green-800 text-sm">Laporan Selesai</p>
+                    <p className="text-xs text-green-700">Kamu telah menyelesaikan laporan ini. Terima kasih atas partisipasimu!</p>
                   </Card>
                 ) : (
                   <>
@@ -458,7 +458,6 @@ export default function ItemDetail() {
                                     size="sm"
                                     onClick={() => handleUpdateClaim(claim.id, 'diterima')}
                                     disabled={claimLoading}
-                                    variant="positive"
                                     className="rounded-xl"
                                   >
                                     <Check size={16} /> Terima
@@ -476,7 +475,7 @@ export default function ItemDetail() {
                                 </div>
                               ) : claim.status === 'diterima' ? (
                                 <div className="space-y-2 w-full">
-                                  <Button type="button" size="sm" variant="positive" onClick={() => navigate(`/messages/${claim.id}`)} className="w-full rounded-xl">
+                                  <Button type="button" size="sm" onClick={() => navigate(`/messages/${claim.id}`)} className="w-full rounded-xl">
                                     <MessageCircle size={16} /> Buka Chat
                                   </Button>
                                   <Button
@@ -502,7 +501,6 @@ export default function ItemDetail() {
                     </Card>
                     <Button
                       className="w-full py-4 text-base font-bold"
-                      variant="positive"
                       onClick={handleResolveItem}
                       disabled={actionLoading}
                     >

@@ -175,7 +175,7 @@ export default function AdminDashboard() {
                   <Button size="sm" variant="danger" className="rounded-lg" disabled={bulkLoading} onClick={() => runBulkAction('block-users')}>
                     Blokir
                   </Button>
-                  <Button size="sm" variant="positive" className="rounded-lg" disabled={bulkLoading} onClick={() => runBulkAction('unblock-users')}>
+                  <Button size="sm" variant="secondary" className="rounded-lg" disabled={bulkLoading} onClick={() => runBulkAction('unblock-users')}>
                     Unblock
                   </Button>
                 </>
@@ -267,7 +267,7 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 text-right">
                       <Button 
                         size="sm" 
-                        variant={u.is_active ? 'danger' : 'positive'} 
+                        variant={u.is_active ? 'danger' : 'primary'} 
                         className="rounded-lg h-8 text-xs px-3 ml-auto"
                         onClick={() => handleBlockUser(u.id)}
                       >
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
                       {report.status === 'pending' && (
                         <Button 
                           size="sm" 
-                          variant="positive" 
+                          variant="primary" 
                           className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center"
                           onClick={() => handleReviewReport(report.id)}
                         >
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
                       {report.status === 'ditinjau' && (
                         <Button
                           size="sm"
-                          variant="positive"
+                          variant="primary"
                           className="h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center"
                           onClick={() => handleReviewReport(report.id, 'selesai')}
                         >

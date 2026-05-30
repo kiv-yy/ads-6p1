@@ -61,7 +61,7 @@ export default function Claim() {
   if (step === 3) {
     return (
       <div className="max-w-xl mx-auto py-20 text-center space-y-8 animate-in fade-in zoom-in duration-500">
-        <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto text-blue-600 shadow-xl shadow-blue-100/50">
+        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto text-green-600 shadow-xl shadow-green-100/50">
           <CheckCircle2 size={48} />
         </div>
         <div className="space-y-2">

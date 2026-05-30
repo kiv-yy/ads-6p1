@@ -75,12 +75,12 @@ export default function VerifyEmail() {
             <p className="font-bold text-gray-900 break-all">{email}</p>
           </div>
 
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">
+          <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-sm text-green-700">
             Mohon cek inbox email utama dan folder spam, lalu klik link verifikasi untuk mengaktifkan akun.
           </div>
 
           {resendMessage && (
-            <p className="rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-700">{resendMessage}</p>
+            <p className="rounded-2xl border border-green-100 bg-green-50 p-3 text-sm text-green-700">{resendMessage}</p>
           )}
           {resendError && (
             <p className="rounded-2xl border border-red-100 bg-red-50 p-3 text-sm text-red-600">{resendError}</p>
@@ -103,7 +103,7 @@ export default function VerifyEmail() {
     <AuthLayout>
       <div className="w-full max-w-md space-y-6 text-center animate-in fade-in zoom-in duration-300">
         <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold ${
-          status === 'success' ? 'bg-blue-100 text-blue-700' : status === 'error' ? 'bg-red-100 text-red-700' : 'bg-ipb-green text-white'
+          status === 'success' ? 'bg-green-100 text-green-700' : status === 'error' ? 'bg-red-100 text-red-700' : 'bg-ipb-green text-white'
         }`}>
           {status === 'success' ? <CheckCircle size={34} /> : status === 'error' ? '!' : '...'}
         </div>

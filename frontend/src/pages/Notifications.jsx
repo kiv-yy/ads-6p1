@@ -37,14 +37,14 @@ function notificationClasses(notification) {
       dot: 'bg-red-500',
     },
     positive: {
+      row: 'bg-green-50/70',
+      icon: 'bg-green-50 text-green-600',
+      dot: 'bg-green-500',
+    },
+    neutral: {
       row: 'bg-blue-50/70',
       icon: 'bg-blue-50 text-blue-600',
       dot: 'bg-blue-500',
-    },
-    neutral: {
-      row: 'bg-gray-50',
-      icon: 'bg-gray-50 text-gray-600',
-      dot: 'bg-gray-400',
     },
   };
   return styles[tone] || styles.neutral;

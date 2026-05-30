@@ -184,7 +184,7 @@ export default function Profile() {
               </form>
             )}
             {(profileNotice || (!isEditing && profileError)) && (
-              <p className={`text-sm font-semibold ${profileError ? 'text-red-500' : 'text-blue-600'}`}>
+              <p className={`text-sm font-semibold ${profileError ? 'text-red-500' : 'text-green-600'}`}>
                 {profileError || profileNotice}
               </p>
             )}
