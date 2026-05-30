@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Input } from '../components/UI';
 import AuthLayout from '../components/AuthLayout';
@@ -11,6 +11,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [canResendVerification, setCanResendVerification] = useState(false);
@@ -81,13 +82,21 @@ export default function Login() {
                 <Lock className="absolute left-4 top-[3.1rem] -translate-y-1/2 text-ipb-green/60" size={18} />
                 <Input
                   label="Password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="********"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12"
+                  className="pl-12 pr-12"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute right-4 top-[3.1rem] -translate-y-1/2 text-gray-400 hover:text-ipb-green transition-colors"
+                  aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
               <div className="text-right">
                 <Link to="/forgot-password" className="text-xs text-ipb-green font-semibold hover:underline">Lupa password?</Link>

@@ -53,6 +53,9 @@ export default function ResetPassword() {
             <Link to="/login" className="block">
               <Button className="w-full py-3">Masuk ke Akun</Button>
             </Link>
+            <Link to="/login" className="block text-center text-sm font-bold text-ipb-green hover:underline">
+              Kembali ke Login
+            </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -62,6 +65,9 @@ export default function ResetPassword() {
             <Button type="submit" className="w-full py-3" disabled={loading}>
               {loading ? 'Menyimpan...' : 'Simpan Password Baru'}
             </Button>
+            <Link to="/login" className="block text-center text-sm font-bold text-ipb-green hover:underline">
+              Kembali ke Login
+            </Link>
           </form>
         )}
       </div>

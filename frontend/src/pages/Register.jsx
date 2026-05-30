@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Input } from '../components/UI';
 import AuthLayout from '../components/AuthLayout';
@@ -18,6 +19,8 @@ export default function Register() {
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,24 +115,46 @@ export default function Register() {
             {!emailError && <p className="text-xs text-gray-400 ml-1 mt-2">Hanya untuk email IPB: @apps.ipb.ac.id</p>}
           </div>
           <div className="md:col-span-2">
-            <Input 
-              label="Password" 
-              type="password" 
-              placeholder="Minimal 8 karakter" 
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              required
-            />
+            <div className="relative">
+              <Input
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Minimal 8 karakter"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                className="pr-12"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute right-4 top-[3.1rem] -translate-y-1/2 text-gray-400 hover:text-ipb-green transition-colors"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <div className="md:col-span-2">
-            <Input
-              label="Konfirmasi Password"
-              type="password"
-              placeholder="Ulangi password"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-              required
-            />
+            <div className="relative">
+              <Input
+                label="Konfirmasi Password"
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Ulangi password"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                className="pr-12"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((value) => !value)}
+                className="absolute right-4 top-[3.1rem] -translate-y-1/2 text-gray-400 hover:text-ipb-green transition-colors"
+                aria-label={showConfirmPassword ? 'Sembunyikan konfirmasi password' : 'Lihat konfirmasi password'}
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           {error && <p className="md:col-span-2 text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
