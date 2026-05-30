@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
-import { Button, Card, Input } from '../components/UI';
+import { Button, Input } from '../components/UI';
+import AuthLayout from '../components/AuthLayout';
 import { getApiErrorMessage } from '../utils/apiError';
 
 export default function ResetPassword() {
@@ -36,9 +37,13 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
+    <AuthLayout>
+      <div className="w-full max-w-md space-y-6 animate-in fade-in zoom-in duration-300">
         <div className="text-center space-y-2">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-ipb-green text-2xl font-bold text-white shadow-lg shadow-ipb-green/20">
+            L
+          </div>
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-ipb-green">Reset Password</p>
           <h1 className="text-2xl font-bold text-gray-900">Buat Password Baru</h1>
           <p className="text-gray-500">Gunakan minimal 8 karakter.</p>
         </div>
@@ -59,7 +64,7 @@ export default function ResetPassword() {
             </Button>
           </form>
         )}
-      </Card>
-    </div>
+      </div>
+    </AuthLayout>
   );
 }

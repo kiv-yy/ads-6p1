@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, Card, Input } from '../components/UI';
+import { Button, Input } from '../components/UI';
+import AuthLayout from '../components/AuthLayout';
 import { getApiErrorMessage } from '../utils/apiError';
 
 export default function Register() {
@@ -65,9 +66,13 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg p-8 space-y-6">
+    <AuthLayout>
+      <div className="w-full max-w-lg space-y-6 animate-in fade-in zoom-in duration-300">
         <div className="text-center space-y-2">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-ipb-green text-2xl font-bold text-white shadow-lg shadow-ipb-green/20">
+            L
+          </div>
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-ipb-green">User Register</p>
           <h1 className="text-2xl font-bold text-gray-900">Daftar Akun Baru</h1>
           <p className="text-gray-500">Lengkapi data diri Anda sebagai civitas IPB</p>
         </div>
@@ -138,7 +143,7 @@ export default function Register() {
           Sudah punya akun?{' '}
           <Link to="/login" className="text-ipb-green font-bold hover:underline">Masuk</Link>
         </div>
-      </Card>
-    </div>
+      </div>
+    </AuthLayout>
   );
 }

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Mail, RefreshCw } from 'lucide-react';
 import api from '../api/axios';
-import { Button, Card } from '../components/UI';
+import { Button } from '../components/UI';
+import AuthLayout from '../components/AuthLayout';
 import { getApiErrorMessage } from '../utils/apiError';
 
 export default function VerifyEmail() {
@@ -63,8 +64,8 @@ export default function VerifyEmail() {
 
   if (status === 'pending') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-8 space-y-6 text-center">
+      <AuthLayout>
+        <div className="w-full max-w-md space-y-6 text-center animate-in fade-in zoom-in duration-300">
           <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center bg-ipb-green text-white">
             <Mail size={30} />
           </div>
@@ -93,14 +94,14 @@ export default function VerifyEmail() {
           <Link to="/login" className="block text-sm font-bold text-ipb-green hover:underline">
             Kembali ke halaman login
           </Link>
-        </Card>
-      </div>
+        </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 space-y-6 text-center">
+    <AuthLayout>
+      <div className="w-full max-w-md space-y-6 text-center animate-in fade-in zoom-in duration-300">
         <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold ${
           status === 'success' ? 'bg-green-100 text-green-700' : status === 'error' ? 'bg-red-100 text-red-700' : 'bg-ipb-green text-white'
         }`}>
@@ -117,7 +118,7 @@ export default function VerifyEmail() {
             Kembali ke Login
           </Button>
         </Link>
-      </Card>
-    </div>
+      </div>
+    </AuthLayout>
   );
 }

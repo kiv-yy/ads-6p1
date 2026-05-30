@@ -35,9 +35,9 @@ export default function ItemDetail() {
   const claimCtaLabel = item && isLostItem(item.type) ? 'Saya Menemukan Barang Ini' : 'Ajukan Klaim Barang Ini';
   const reporter = item?.user || item?.owner;
   const userIdentityLines = (targetUser) => [
-    { icon: IdCard, label: 'NIM', value: targetUser?.nim || 'NIM belum diisi' },
-    { icon: BookOpen, label: 'Jurusan', value: targetUser?.major || 'Jurusan belum diisi' },
-    { icon: GraduationCap, label: 'Fakultas', value: targetUser?.faculty || 'Fakultas belum diisi' },
+    { icon: IdCard, label: 'NIM', value: targetUser?.nim || '-' },
+    { icon: BookOpen, label: 'Jurusan', value: targetUser?.major || '-' },
+    { icon: GraduationCap, label: 'Fakultas', value: targetUser?.faculty || '-' },
   ];
 
   const fetchClaims = async (loadedItem = item) => {
@@ -331,7 +331,7 @@ export default function ItemDetail() {
               <UserAvatar user={reporter} className="w-14 h-14 bg-gray-100" textClassName="text-lg" />
               <div>
                 <p className="font-bold text-gray-900">{reporter?.full_name || 'Anonim User'}</p>
-                <p className="text-sm text-gray-500">{reporter?.major || 'Jurusan belum diisi'}</p>
+                <p className="text-sm text-gray-500">{reporter?.major || '-'}</p>
               </div>
             </div>
             
@@ -441,7 +441,7 @@ export default function ItemDetail() {
                                       claim.claim_user?.nim,
                                       claim.claim_user?.major,
                                       claim.claim_user?.faculty,
-                                    ].filter(Boolean).join(' | ') || 'Data diri belum lengkap'}
+                                    ].filter(Boolean).join(' | ') || '-'}
                                   </p>
                                 </div>
                                 {claim.status === 'pending' && (

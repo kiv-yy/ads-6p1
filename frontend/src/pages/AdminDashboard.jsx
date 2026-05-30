@@ -258,8 +258,8 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-900">{u.full_name}</td>
                     <td className="px-6 py-4 text-gray-500">
-                      <div>{u.faculty || 'Fakultas belum diisi'}</div>
-                      <div className="text-[10px]">{u.major || 'Jurusan belum diisi'} / {u.nim || 'NIM belum diisi'}</div>
+                      <div>{u.faculty || '-'}</div>
+                      <div className="text-[10px]">{u.major || '-'} / {u.nim || '-'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <Badge variant={u.is_active ? 'success' : 'danger'}>{u.is_active ? 'Aktif' : 'Terblokir'}</Badge>
@@ -295,7 +295,7 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{report.reporter?.full_name || "User"}</div>
                       <div className="text-xs text-gray-500">
-                        {[report.reporter?.nim, report.reporter?.major, report.reporter?.faculty].filter(Boolean).join(' | ') || 'Data diri belum lengkap'}
+                        {[report.reporter?.nim, report.reporter?.major, report.reporter?.faculty].filter(Boolean).join(' | ') || '-'}
                       </div>
                     </td>
                     <td className="px-6 py-4 max-w-xs">
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{item.owner?.full_name || 'User'}</div>
                       <div className="text-xs text-gray-500">
-                        {[item.owner?.nim, item.owner?.major, item.owner?.faculty].filter(Boolean).join(' | ') || 'Data diri belum lengkap'}
+                        {[item.owner?.nim, item.owner?.major, item.owner?.faculty].filter(Boolean).join(' | ') || '-'}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">{item.category}</td>
