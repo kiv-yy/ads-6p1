@@ -68,6 +68,8 @@ class ClaimRead(BaseModel):
     proof_image_url: str | None = None
     status: ClaimStatus
     created_at: datetime
+    latest_message_at: datetime | None = None
+    latest_message_preview: str | None = None
     item: ItemRead | None = None
     claimant: UserRead | None = None
 

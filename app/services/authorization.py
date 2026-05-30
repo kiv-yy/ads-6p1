@@ -16,4 +16,5 @@ class AuthorizationPolicy:
 
     @staticmethod
     def can_chat(claim: Claim, user: User) -> bool:
-        return AuthorizationPolicy.can_access_claim(claim, user) and claim.status == ClaimStatus.ACCEPTED.value
+        is_participant = claim.claimant_id == user.id or claim.item.owner_id == user.id
+        return is_participant and claim.status == ClaimStatus.ACCEPTED.value

@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import or_
 
 from app import schemas
-from app.models import Claim, ClaimStatus, Item, ItemStatus, User
+from app.models import ChatMessage, Claim, ClaimStatus, Item, ItemStatus, User
 from app.services.base import BaseRepository
 from app.services.chat import ChatRepository
 from app.services.notifications import NotificationRepository
@@ -57,16 +57,20 @@ class ClaimRepository(BaseRepository):
         return self.db.query(Claim).filter(Claim.item_id == item_id).order_by(Claim.created_at.desc()).offset(skip).limit(limit).all()
 
     def list_for_user(self, user_id: UUID) -> list[Claim]:
-        return (
+        claims = (
             self.db.query(Claim)
             .join(Item)
             .filter(or_(Claim.claimant_id == user_id, Item.owner_id == user_id))
             .order_by(Claim.created_at.desc())
             .all()
         )
+        self._attach_latest_chat_metadata(claims)
+        return claims
 
     def list_all(self, skip: int = 0, limit: int = 100) -> list[Claim]:
-        return self.db.query(Claim).order_by(Claim.created_at.desc()).offset(skip).limit(limit).all()
+        claims = self.db.query(Claim).order_by(Claim.created_at.desc()).offset(skip).limit(limit).all()
+        self._attach_latest_chat_metadata(claims)
+        return claims
 
     def update_status(self, claim: Claim, status: ClaimStatus) -> Claim:
         claim.status = status.value
@@ -92,3 +96,22 @@ class ClaimRepository(BaseRepository):
 
     def _has_accepted_claim(self, item_id: UUID) -> bool:
         return self.db.query(Claim).filter(Claim.item_id == item_id, Claim.status == ClaimStatus.ACCEPTED.value).first() is not None
+
+    def _attach_latest_chat_metadata(self, claims: list[Claim]) -> None:
+        for claim in claims:
+            chat = ChatRepository(self.db).get_for_claim(claim)
+            latest_message = None
+            if chat:
+                latest_message = (
+                    self.db.query(ChatMessage)
+                    .filter(ChatMessage.chat_id == chat.id)
+                    .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+                    .first()
+                )
+            claim.latest_message_at = latest_message.created_at if latest_message else None
+            if latest_message and latest_message.content:
+                claim.latest_message_preview = latest_message.content
+            elif latest_message and latest_message.image_attachment:
+                claim.latest_message_preview = "Mengirim lampiran"
+            else:
+                claim.latest_message_preview = None

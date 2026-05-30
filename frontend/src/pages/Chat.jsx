@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MessageCircle, Search, Send, ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, MessageCircle, Paperclip, Search, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
 import { Card, Button, Badge, UserAvatar } from '../components/UI';
@@ -14,18 +14,20 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [activeClaim, setActiveClaim] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sendingAttachment, setSendingAttachment] = useState(false);
   const scrollRef = useRef(null);
   const ws = useRef(null);
+  const fileInputRef = useRef(null);
 
   const getMessageText = (message) => (message?.content ?? message?.ciphertext ?? '').trim();
   const getMessageSenderId = (message) => String(message?.user_id ?? message?.sender_id ?? '');
   const getClaimParticipant = (claim) => (
-    claim.item_user_id === user.id
+    String(claim.item_user_id) === String(user.id)
       ? claim.claim_user
       : (claim.item?.user || claim.item?.owner)
   );
   const getConversationUserId = (claim) => {
-    if (claim.item_user_id === user.id) {
+    if (String(claim.item_user_id) === String(user.id)) {
       return String(claim.claimant_id || claim.claim_user_id || claim.claimer_id || claim.claim_user?.id || claim.claim_user?.user_id || '');
     }
     return String(claim.item_user_id || claim.item?.user_id || claim.item?.owner_id || claim.item?.user?.id || claim.item?.owner?.id || '');
@@ -35,6 +37,55 @@ export default function Chat() {
     if (!participantId) return true;
     return list.findIndex((item) => getConversationUserId(item) === participantId) === index;
   });
+  const formatChatTime = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta',
+    });
+  };
+  const isImageAttachment = (url) => /\.(jpe?g|png|webp|gif)(\?.*)?$/i.test(url || '');
+  const sendMessagePayload = (payload) => {
+    if (!claimId) return;
+
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify(payload));
+      return;
+    }
+
+    api.post(`/claims/${claimId}/chat`, payload)
+      .then((response) => {
+        setMessages((prev) => {
+          if (prev.some((message) => String(message.id) === String(response.data.id))) return prev;
+          return [...prev, response.data];
+        });
+      })
+      .catch(console.error);
+  };
+  const uploadAndSendAttachment = async (file) => {
+    if (!file || !claimId || sendingAttachment) return;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setSendingAttachment(true);
+    try {
+      const uploadResponse = await api.post(`/claims/${claimId}/chat/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      sendMessagePayload({
+        content: file.type?.startsWith('image/') ? '' : file.name,
+        image_attachment: uploadResponse.data.image_url,
+      });
+    } catch (error) {
+      console.error('Error uploading chat attachment:', error);
+    } finally {
+      setSendingAttachment(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -79,7 +130,10 @@ export default function Chat() {
         const data = JSON.parse(event.data);
         const message = data.message || data;
         if (!message.id) return;
-        setMessages((prev) => [...prev, message]);
+        setMessages((prev) => {
+          if (prev.some((item) => String(item.id) === String(message.id))) return prev;
+          return [...prev, message];
+        });
       };
 
       return () => {
@@ -99,15 +153,19 @@ export default function Chat() {
     const messageText = newMessage.trim();
     if (!messageText || !claimId) return;
 
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ content: messageText }));
-      setNewMessage('');
-    } else {
-      // Fallback to HTTP if WS is not ready (though backend might not support it)
-      api.post(`/claims/${claimId}/chat`, { content: messageText })
-        .then(() => setNewMessage(''))
-        .catch(console.error);
-    }
+    sendMessagePayload({ content: messageText });
+    setNewMessage('');
+  };
+
+  const handleFileChange = (event) => {
+    uploadAndSendAttachment(event.target.files?.[0]);
+  };
+
+  const handlePaste = (event) => {
+    const imageFile = Array.from(event.clipboardData?.files || []).find((file) => file.type.startsWith('image/'));
+    if (!imageFile) return;
+    event.preventDefault();
+    uploadAndSendAttachment(imageFile);
   };
 
   return (
@@ -147,11 +205,15 @@ export default function Chat() {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                     <p className="font-bold text-gray-900 text-sm truncate">
-                      {claim.item_user_id === user.id ? claim.claim_user?.full_name : (claim.item?.user?.full_name || claim.item?.owner?.full_name)}
+                      {String(claim.item_user_id) === String(user.id) ? claim.claim_user?.full_name : (claim.item?.user?.full_name || claim.item?.owner?.full_name)}
                     </p>
-                    <span className="text-[10px] text-gray-400">10:30</span>
+                    <span className="text-[10px] text-gray-400">
+                      {formatChatTime(claim.latest_message_at || claim.created_at)}
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-500 truncate">{claim.status === 'pending' ? 'Menunggu verifikasi' : claim.status === 'diterima' ? 'Terverifikasi' : 'Ditolak'}</p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {claim.latest_message_preview || (claim.status === 'pending' ? 'Menunggu verifikasi' : claim.status === 'diterima' ? 'Terverifikasi' : 'Ditolak')}
+                  </p>
                 </div>
               </Link>
             ))
@@ -177,7 +239,7 @@ export default function Chat() {
                 <UserAvatar user={activeClaim ? getClaimParticipant(activeClaim) : null} className="w-10 h-10 bg-gray-100 shrink-0" />
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">
-                    {activeClaim?.item_user_id === user.id ? activeClaim?.claim_user?.full_name : (activeClaim?.item?.user?.full_name || activeClaim?.item?.owner?.full_name)}
+                    {String(activeClaim?.item_user_id) === String(user.id) ? activeClaim?.claim_user?.full_name : (activeClaim?.item?.user?.full_name || activeClaim?.item?.owner?.full_name)}
                     {activeClaim?.item?.type && <Badge className="ml-2 py-0.5 scale-75" variant={activeClaim.item.type.toLowerCase()}>{activeClaim.item.type}</Badge>}
                   </h3>
                   <p className="text-xs text-gray-500">{activeClaim?.item?.name || 'Loading...'}</p>
@@ -210,13 +272,25 @@ export default function Chat() {
                     >
                       <div
                         className={cn(
-                          "px-4 py-2.5 rounded-2xl text-sm shadow-sm",
+                          "px-4 py-2.5 rounded-2xl text-sm shadow-sm space-y-2",
                           isOwnMessage ? "bg-ipb-green text-white rounded-tr-none" : "bg-white text-gray-800 border border-gray-100 rounded-tl-none"
                         )}
                       >
-                        {messageText}
+                        {msg.image_attachment && (
+                          isImageAttachment(msg.image_attachment) ? (
+                            <a href={msg.image_attachment} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl">
+                              <img src={msg.image_attachment} alt="Lampiran chat" className="max-h-64 w-full object-cover" />
+                            </a>
+                          ) : (
+                            <a href={msg.image_attachment} target="_blank" rel="noreferrer" className={cn("flex items-center gap-2 font-bold", isOwnMessage ? "text-white" : "text-ipb-green")}>
+                              <Paperclip size={16} />
+                              Buka lampiran
+                            </a>
+                          )
+                        )}
+                        {messageText && <p>{messageText}</p>}
                       </div>
-                      <span className="text-[10px] text-gray-400 px-1">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[10px] text-gray-400 px-1">{formatChatTime(msg.created_at)}</span>
                     </div>
                   );
                 })}
@@ -232,18 +306,26 @@ export default function Chat() {
 
             {/* Input */}
             <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100 flex gap-2 items-center">
-              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0 cursor-pointer hover:bg-gray-100 transition-colors">
-                <Plusircle size={20} />
-              </div>
+              <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sendingAttachment}
+                className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500 shrink-0 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                title="Unggah file"
+              >
+                {sendingAttachment ? <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-ipb-green animate-spin" /> : <ImageIcon size={20} />}
+              </button>
               <input
                 className="flex-1 bg-gray-50 border border-transparent focus:border-ipb-green focus:bg-white rounded-2xl px-6 py-3 text-sm outline-none transition-all"
                 placeholder="Tulis pesan..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
+                onPaste={handlePaste}
               />
               <button
                 type="submit"
-                disabled={!newMessage.trim()}
+                disabled={!newMessage.trim() || sendingAttachment}
                 className="w-12 h-12 bg-ipb-green text-white rounded-2xl flex items-center justify-center shadow-lg shadow-ipb-green/20 active:scale-90 transition-all disabled:opacity-50 disabled:grayscale"
               >
                 <Send size={20} />
@@ -260,11 +342,5 @@ export default function Chat() {
         )}
       </Card>
     </div>
-  );
-}
-
-function Plusircle({ size }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
   );
 }

@@ -81,20 +81,33 @@ class ChatConnectionManager:
     def __init__(self) -> None:
         self.active_connections: dict[UUID, list[WebSocket]] = defaultdict(list)
 
-    async def connect(self, claim_id: UUID, websocket: WebSocket) -> None:
+    async def connect(self, chat_id: UUID, websocket: WebSocket) -> None:
         await websocket.accept()
-        self.active_connections[claim_id].append(websocket)
+        self.active_connections[chat_id].append(websocket)
 
-    def disconnect(self, claim_id: UUID, websocket: WebSocket) -> None:
-        connections = self.active_connections.get(claim_id, [])
+    def disconnect(self, chat_id: UUID, websocket: WebSocket) -> None:
+        connections = self.active_connections.get(chat_id, [])
         if websocket in connections:
             connections.remove(websocket)
-        if not connections and claim_id in self.active_connections:
-            del self.active_connections[claim_id]
+        if not connections and chat_id in self.active_connections:
+            del self.active_connections[chat_id]
+
+    async def broadcast_to_chat(self, chat_id: UUID, payload: dict) -> None:
+        stale_connections: list[WebSocket] = []
+        for connection in list(self.active_connections.get(chat_id, [])):
+            try:
+                await connection.send_json(payload)
+            except RuntimeError:
+                stale_connections.append(connection)
+        for connection in stale_connections:
+            self.disconnect(chat_id, connection)
 
     async def broadcast_to_claim(self, claim_id: UUID, payload: dict) -> None:
         for connection in list(self.active_connections.get(claim_id, [])):
             await connection.send_json(payload)
+
+    def count_for_chat(self, chat_id: UUID) -> int:
+        return len(self.active_connections.get(chat_id, []))
 
     def count_for_claim(self, claim_id: UUID) -> int:
         return len(self.active_connections.get(claim_id, []))

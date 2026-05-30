@@ -1,6 +1,7 @@
-from uuid import UUID
+from pathlib import Path
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, WebSocket, WebSocketDisconnect, status
 from sqlalchemy.orm import Session
 
 from app import schemas
@@ -14,6 +15,15 @@ from app.services.claims import ClaimRepository
 
 
 router = APIRouter(tags=["Chat"])
+UPLOAD_DIR = Path("app/static/uploads")
+ALLOWED_CHAT_FILE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+    "application/pdf": ".pdf",
+}
+MAX_CHAT_FILE_SIZE = 8 * 1024 * 1024
 
 
 @router.get("/claims/{claim_id}/chat", response_model=list[schemas.ChatMessageRead])
@@ -51,7 +61,7 @@ def read_chat_room_info(
         participants=[claim.item.owner_id, claim.claimant_id],
         is_realtime_enabled=True,
         encryption="client-side end-to-end; server stores ciphertext in chat_messages.isi_pesan",
-        active_connections=chat_manager.count_for_claim(claim.id),
+        active_connections=chat_manager.count_for_chat(chat.id),
         status=claim.status,
         item=claim.item,
         claim_user=claim.claimant,
@@ -74,6 +84,37 @@ def send_chat_message(
     return ChatRepository(db).create_message(claim, sender_id=current_user.id, message_in=message_in)
 
 
+@router.post("/claims/{claim_id}/chat/upload", response_model=schemas.PostImageCreate)
+async def upload_chat_attachment(
+    claim_id: UUID,
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_dev_current_user),
+) -> schemas.PostImageCreate:
+    claim = ClaimRepository(db).get(claim_id)
+    if not claim:
+        raise ApiError.not_found("Claim")
+    if not AuthorizationPolicy.can_chat(claim, current_user):
+        raise ApiError.forbidden("Chat is available only for accepted claims")
+
+    extension = ALLOWED_CHAT_FILE_TYPES.get(file.content_type or "")
+    if extension is None:
+        raise ApiError.bad_request("File chat harus berupa gambar JPG, PNG, WEBP, GIF, atau PDF")
+
+    content = await file.read()
+    if len(content) > MAX_CHAT_FILE_SIZE:
+        raise ApiError.bad_request("Ukuran file chat maksimal 8 MB")
+
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"chat-{uuid4()}{extension}"
+    target = UPLOAD_DIR / filename
+    target.write_bytes(content)
+
+    file_url = str(request.base_url).rstrip("/") + f"/static/uploads/{filename}"
+    return schemas.PostImageCreate(image_url=file_url)
+
+
 @router.websocket("/ws/claims/{claim_id}/chat")
 async def realtime_chat(
     websocket: WebSocket,
@@ -93,12 +134,14 @@ async def realtime_chat(
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    await chat_manager.connect(claim_id, websocket)
+    chat = ChatRepository(db).get_or_create_for_claim(claim)
+    await chat_manager.connect(chat.id, websocket)
     try:
         await websocket.send_json(
             {
                 "type": "connected",
                 "claim_id": str(claim_id),
+                "chat_id": str(chat.id),
                 "user_id": str(user.id),
                 "encryption": "client-side end-to-end; server stores ciphertext only",
             }
@@ -113,11 +156,11 @@ async def realtime_chat(
             else:
                 message_in = schemas.ChatMessageCreate(content="")
             message = ChatRepository(db).create_message(claim, sender_id=user.id, message_in=message_in)
-            event = schemas.ChatMessageRead.model_validate(message).model_dump(mode="json")
-            await chat_manager.broadcast_to_claim(claim_id, event)
+            event = {"type": "message", "message": schemas.ChatMessageRead.model_validate(message).model_dump(mode="json")}
+            await chat_manager.broadcast_to_chat(chat.id, event)
     except WebSocketDisconnect:
-        chat_manager.disconnect(claim_id, websocket)
+        chat_manager.disconnect(chat.id, websocket)
     except ValueError:
         await websocket.send_json({"type": "error", "detail": "Invalid encrypted message payload"})
-        chat_manager.disconnect(claim_id, websocket)
+        chat_manager.disconnect(chat.id, websocket)
         await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)

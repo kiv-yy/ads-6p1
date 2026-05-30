@@ -44,14 +44,21 @@ def seed_default_categories() -> None:
         db.commit()
 
 
-def ensure_user_profile_columns() -> None:
+def ensure_runtime_columns() -> None:
     inspector = inspect(engine)
-    if not inspector.has_table("users"):
-        return
-
-    columns = {column["name"] for column in inspector.get_columns("users")}
     with engine.begin() as connection:
-        if "username" not in columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(50)"))
-        if engine.dialect.name == "postgresql":
-            connection.execute(text("ALTER TABLE users ALTER COLUMN nim DROP NOT NULL"))
+        if inspector.has_table("users"):
+            user_columns = {column["name"] for column in inspector.get_columns("users")}
+            if "username" not in user_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(50)"))
+            if engine.dialect.name == "postgresql":
+                connection.execute(text("ALTER TABLE users ALTER COLUMN nim DROP NOT NULL"))
+
+        if inspector.has_table("chat_messages"):
+            chat_columns = {column["name"] for column in inspector.get_columns("chat_messages")}
+            if "image_attachment" not in chat_columns:
+                connection.execute(text("ALTER TABLE chat_messages ADD COLUMN image_attachment TEXT"))
+
+
+def ensure_user_profile_columns() -> None:
+    ensure_runtime_columns()
