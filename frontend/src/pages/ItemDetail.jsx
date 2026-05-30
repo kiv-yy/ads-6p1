@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, Phone, Mail, ChevronLeft, Share2, Package, MessageCircle, ShieldCheck, Check, X, Flag } from 'lucide-react';
+import { MapPin, Calendar, Clock, Mail, ChevronLeft, Share2, Package, MessageCircle, ShieldCheck, Check, X, Flag } from 'lucide-react';
 import api from '../api/axios';
 import { Button, Card, Badge, UserAvatar } from '../components/UI';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,7 @@ export default function ItemDetail() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportError, setReportError] = useState('');
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -240,7 +241,14 @@ export default function ItemDetail() {
           <Card className="overflow-hidden">
             <div className="aspect-[16/10] bg-gray-100 relative">
               {item.image ? (
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setIsImagePreviewOpen(true)}
+                  className="block w-full h-full cursor-zoom-in"
+                  aria-label="Lihat gambar penuh"
+                >
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                </button>
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-300">
                   <Package size={80} />
@@ -323,10 +331,6 @@ export default function ItemDetail() {
             </div>
             
             <div className="space-y-3 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-3 text-gray-600 text-sm">
-                <Phone size={18} className="text-gray-400" />
-                <span>0812-3456-7890</span>
-              </div>
               <div className="flex items-center gap-3 text-gray-600 text-sm">
                 <Mail size={18} className="text-gray-400" />
                 <span className="truncate">{reporter?.email || 'user@apps.ipb.ac.id'}</span>
@@ -535,6 +539,31 @@ export default function ItemDetail() {
               </Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {isImagePreviewOpen && item.image && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setIsImagePreviewOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsImagePreviewOpen(false);
+            }}
+            className="absolute right-4 top-4 w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 flex items-center justify-center"
+            aria-label="Tutup gambar"
+          >
+            <X size={22} />
+          </button>
+          <img
+            src={item.image}
+            alt={item.name}
+            onClick={(event) => event.stopPropagation()}
+            className="max-h-[90vh] max-w-[95vw] rounded-2xl object-contain shadow-2xl"
+          />
         </div>
       )}
     </div>
