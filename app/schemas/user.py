@@ -18,8 +18,9 @@ class TokenData(BaseModel):
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str = Field(min_length=2, max_length=100)
+    username: str | None = Field(default=None, min_length=3, max_length=50)
     faculty: str | None = Field(default=None, max_length=100)
-    nim: str = Field(min_length=3, max_length=20)
+    nim: str | None = Field(default=None, min_length=3, max_length=20)
 
     @field_validator("email")
     @classmethod
@@ -31,6 +32,14 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=128)
+
+
+class UserProfileUpdate(BaseModel):
+    full_name: str | None = Field(default=None, min_length=2, max_length=100)
+    username: str | None = Field(default=None, min_length=3, max_length=50)
+    nim: str | None = Field(default=None, min_length=3, max_length=20)
+    faculty: str | None = Field(default=None, max_length=100)
+    profile_photo: str | None = Field(default=None, max_length=2000)
 
 
 class UserRead(UserBase):

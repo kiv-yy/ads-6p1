@@ -1,6 +1,9 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from pathlib import Path
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -18,6 +21,8 @@ from app.services.user_service import UserRepository
 router = APIRouter(tags=["Users"])
 settings = get_settings()
 BLOCKED_USER_MESSAGE = "Mohon maaf anda telah diblokir karena telah melakukan pelanggaran"
+UPLOAD_DIR = Path("app/static/uploads")
+ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
 
 
 @router.post("/auth/register", response_model=schemas.RegisterResponse, status_code=status.HTTP_201_CREATED)
@@ -25,8 +30,11 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)) -> sche
     users = UserRepository(db)
     if users.get_by_email(user_in.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    if users.get_by_nim(user_in.nim):
+    candidate_nim = user_in.nim or user_in.username
+    if candidate_nim and users.get_by_nim(candidate_nim):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="NIM already registered")
+    if user_in.username and users.get_by_username(user_in.username):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already registered")
     user = users.create(user_in)
     try:
         verification_url = EmailVerificationRepository(db).create_and_send(user)
@@ -124,3 +132,41 @@ def reset_password(
 @router.get("/users/me", response_model=schemas.UserRead)
 def read_me(current_user: User = Depends(get_dev_current_user)) -> User:
     return current_user
+
+
+@router.patch("/users/me", response_model=schemas.UserRead)
+def update_me(
+    profile_in: schemas.UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_dev_current_user),
+) -> User:
+    users = UserRepository(db)
+    if profile_in.nim and profile_in.nim != current_user.nim:
+        existing_nim = users.get_by_nim(profile_in.nim)
+        if existing_nim and existing_nim.id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="NIM already registered")
+    if profile_in.username and profile_in.username != current_user.username:
+        existing_username = users.get_by_username(profile_in.username)
+        if existing_username and existing_username.id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already registered")
+    return users.update_profile(current_user, profile_in)
+
+
+@router.post("/users/me/profile-photo", response_model=schemas.UserRead)
+async def upload_profile_photo(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_dev_current_user),
+) -> User:
+    extension = ALLOWED_IMAGE_TYPES.get(file.content_type or "")
+    if not extension:
+        raise ApiError.bad_request("File harus berupa gambar JPG, PNG, WEBP, atau GIF")
+
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"profile-{current_user.id}-{uuid4()}{extension}"
+    target = UPLOAD_DIR / filename
+    target.write_bytes(await file.read())
+
+    current_user.profile_photo = str(request.base_url).rstrip("/") + f"/static/uploads/{filename}"
+    return UserRepository(db).save(current_user)

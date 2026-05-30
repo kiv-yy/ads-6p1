@@ -38,6 +38,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 CREATE TABLE IF NOT EXISTS users (
     user_id         UUID            PRIMARY KEY DEFAULT uuid_generate_v4(),
     nama            VARCHAR(100)    NOT NULL,
+    username        VARCHAR(50)     UNIQUE,
     email_ipb       VARCHAR(150)    NOT NULL UNIQUE,
     nim             VARCHAR(20)     NOT NULL UNIQUE,
     fakultas        VARCHAR(100),
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 COMMENT ON TABLE  users                 IS 'Data akun pengguna aplikasi';
 COMMENT ON COLUMN users.user_id         IS 'Primary key UUID';
+COMMENT ON COLUMN users.username        IS 'Username pengguna, harus unik jika diisi';
 COMMENT ON COLUMN users.email_ipb       IS 'Email institusi IPB, harus unik';
 COMMENT ON COLUMN users.nim             IS 'Nomor Induk Mahasiswa, harus unik';
 COMMENT ON COLUMN users.role            IS 'mahasiswa | admin';

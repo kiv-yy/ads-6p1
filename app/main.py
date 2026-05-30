@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from app.core.config import get_settings
-from app.db.database import Base, engine, seed_default_categories
+from app.db.database import Base, engine, ensure_user_profile_columns, seed_default_categories
 from app.internal import admin
 from app.models import AdminAction, Category, Chat, ChatMessage, Claim, Item, PostImage, Report, User
 from app.routers import categories, chat, claims, notifications, posts, reports, users
@@ -12,6 +12,7 @@ from app.routers import categories, chat, claims, notifications, posts, reports,
 
 Path("app/static/uploads").mkdir(parents=True, exist_ok=True)
 Base.metadata.create_all(bind=engine)
+ensure_user_profile_columns()
 seed_default_categories()
 settings = get_settings()
 

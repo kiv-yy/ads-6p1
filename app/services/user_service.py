@@ -29,11 +29,14 @@ class UserRepository(BaseRepository):
         self.password_service = password_service or PasswordService()
 
     def create(self, user_in: schemas.UserCreate) -> User:
+        username = user_in.username or user_in.nim
+        nim = user_in.nim or username
         user = User(
             email=user_in.email,
             full_name=user_in.full_name,
+            username=username,
             faculty=user_in.faculty,
-            nim=user_in.nim,
+            nim=nim,
             hashed_password=self.password_service.hash(user_in.password),
             account_status=AccountStatus.INACTIVE.value,
         )
@@ -47,6 +50,17 @@ class UserRepository(BaseRepository):
 
     def get_by_nim(self, nim: str) -> User | None:
         return self.db.query(User).filter(User.nim == nim).first()
+
+    def get_by_username(self, username: str) -> User | None:
+        return self.db.query(User).filter(User.username == username).first()
+
+    def update_profile(self, user: User, profile_in: schemas.UserProfileUpdate) -> User:
+        payload = profile_in.model_dump(exclude_unset=True)
+        for field, value in payload.items():
+            if field in {"full_name", "username", "nim"} and value is None:
+                continue
+            setattr(user, field, value)
+        return self.save(user)
 
     def list(self, skip: int = 0, limit: int = 20, include_blocked: bool = True) -> list[User]:
         query = self.db.query(User)

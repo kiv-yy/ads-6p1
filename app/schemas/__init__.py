@@ -23,6 +23,7 @@ from app.schemas.user import (
     TokenData,
     UserCreate,
     UserModerationUpdate,
+    UserProfileUpdate,
     UserRead,
     VerifyEmailResponse,
 )
@@ -56,6 +57,7 @@ __all__ = [
     "TokenData",
     "UserCreate",
     "UserModerationUpdate",
+    "UserProfileUpdate",
     "UserRead",
     "VerifyEmailResponse",
     "normalize_item_status",

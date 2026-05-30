@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import get_settings
@@ -42,3 +42,16 @@ def seed_default_categories() -> None:
             if name not in existing:
                 db.add(Category(name=name))
         db.commit()
+
+
+def ensure_user_profile_columns() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("users"):
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    if "username" in columns:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(50)"))

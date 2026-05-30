@@ -36,6 +36,7 @@ export default function Register() {
         email: formData.email,
         password: formData.password,
         full_name: formData.full_name,
+        username: formData.username,
         nim: formData.username,
         faculty: null,
       });
@@ -53,6 +54,8 @@ export default function Register() {
           state: { fromRegister: true },
         });
       } else if (message.toLowerCase().includes('nim already registered')) {
+        setError('Username sudah terdaftar.');
+      } else if (message.toLowerCase().includes('username already registered')) {
         setError('Username sudah terdaftar.');
       } else {
         setError(message);
