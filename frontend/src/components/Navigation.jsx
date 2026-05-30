@@ -4,6 +4,7 @@ import { Home as HomeIcon, Search, PlusCircle, MessageCircle, Bell, LayoutDashbo
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../utils/cn";
 import api from "../api/axios";
+import { UserAvatar } from "./UI";
 
 export const Sidebar = ({ collapsed = false, onToggle }) => {
   const { pathname } = useLocation();
@@ -94,9 +95,7 @@ export const Sidebar = ({ collapsed = false, onToggle }) => {
             collapsed ? "p-2 justify-center" : "p-4 gap-3"
           )}
         >
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-ipb-green font-bold">
-            {user?.full_name?.charAt(0) || "U"}
-          </div>
+          <UserAvatar user={user} className="w-10 h-10 shrink-0" />
           <div className={cn("overflow-hidden", collapsed && "hidden")}>
             <p className="text-sm font-semibold text-white truncate">{user?.full_name || "Guest"}</p>
             <p className="text-[10px] text-white/55 uppercase tracking-wider font-bold">{user?.faculty || "IPB"}</p>
@@ -131,10 +130,14 @@ export const BottomNav = () => {
     <>
       <Link
         to="/profile"
-        className="lg:hidden fixed bottom-20 right-4 w-12 h-12 bg-ipb-green hover:bg-ipb-green-dark text-white rounded-full flex items-center justify-center shadow-lg shadow-ipb-green/30 z-50 transition-all active:scale-95"
+        className="lg:hidden fixed bottom-20 right-4 w-12 h-12 bg-ipb-green hover:bg-ipb-green-dark text-white rounded-full flex items-center justify-center shadow-lg shadow-ipb-green/30 z-50 transition-all active:scale-95 overflow-hidden"
         aria-label="Profil Saya"
       >
-        <User size={22} strokeWidth={2.5} />
+        {user?.profile_photo ? (
+          <img src={user.profile_photo} alt={user.full_name || "Foto profil"} className="w-full h-full object-cover" />
+        ) : (
+          <User size={22} strokeWidth={2.5} />
+        )}
       </Link>
       <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-lg border-t border-gray-100 flex items-center justify-around px-2 z-50">
         {items.map((item) => (

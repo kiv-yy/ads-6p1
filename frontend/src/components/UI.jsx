@@ -67,3 +67,17 @@ export const Badge = ({ children, variant = "info" }) => {
     </span>
   );
 };
+
+export const UserAvatar = ({ user, className, textClassName = "" }) => {
+  const initial = user?.full_name?.charAt(0) || user?.username?.charAt(0) || "U";
+
+  return (
+    <div className={cn("rounded-full bg-white flex items-center justify-center text-ipb-green font-bold overflow-hidden", className)}>
+      {user?.profile_photo ? (
+        <img src={user.profile_photo} alt={user.full_name || "Foto profil"} className="w-full h-full object-cover" />
+      ) : (
+        <span className={textClassName}>{initial}</span>
+      )}
+    </div>
+  );
+};

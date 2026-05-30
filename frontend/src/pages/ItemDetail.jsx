@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, User, Phone, Mail, ChevronLeft, Share2, Package, MessageCircle, ShieldCheck, Check, X, Flag } from 'lucide-react';
+import { MapPin, Calendar, Clock, Phone, Mail, ChevronLeft, Share2, Package, MessageCircle, ShieldCheck, Check, X, Flag } from 'lucide-react';
 import api from '../api/axios';
-import { Button, Card, Badge } from '../components/UI';
+import { Button, Card, Badge, UserAvatar } from '../components/UI';
 import { useAuth } from '../contexts/AuthContext';
 import { isLostItem, itemTypeLabel, itemTypeVariant } from '../utils/itemType';
 
@@ -315,9 +315,7 @@ export default function ItemDetail() {
           <Card className="p-6 space-y-6">
             <h2 className="text-lg font-bold text-gray-900">Identitas Pelapor</h2>
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
-                <User size={32} className="text-gray-400" />
-              </div>
+              <UserAvatar user={reporter} className="w-14 h-14 bg-gray-100" textClassName="text-lg" />
               <div>
                 <p className="font-bold text-gray-900">{reporter?.full_name || 'Anonim User'}</p>
                 <p className="text-sm text-gray-500">{reporter?.faculty || 'Ilmu Komputer'}</p>

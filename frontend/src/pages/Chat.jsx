@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { MessageCircle, Search, Send, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
-import { Card, Button, Badge } from '../components/UI';
+import { Card, Button, Badge, UserAvatar } from '../components/UI';
 import { cn } from '../utils/cn';
 
 export default function Chat() {
@@ -19,6 +19,11 @@ export default function Chat() {
 
   const getMessageText = (message) => (message?.content ?? message?.ciphertext ?? '').trim();
   const getMessageSenderId = (message) => String(message?.user_id ?? message?.sender_id ?? '');
+  const getClaimParticipant = (claim) => (
+    claim.item_user_id === user.id
+      ? claim.claim_user
+      : (claim.item?.user || claim.item?.owner)
+  );
   const getConversationUserId = (claim) => {
     if (claim.item_user_id === user.id) {
       return String(claim.claimant_id || claim.claim_user_id || claim.claimer_id || claim.claim_user?.id || claim.claim_user?.user_id || '');
@@ -138,9 +143,7 @@ export default function Chat() {
                   claimId === String(claim.id) && "bg-ipb-green-light"
                 )}
               >
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                  {claim.item_user_id === user.id ? claim.claim_user?.full_name?.charAt(0) : (claim.item?.user?.full_name || claim.item?.owner?.full_name)?.charAt(0)}
-                </div>
+                <UserAvatar user={getClaimParticipant(claim)} className="w-12 h-12 bg-gray-100 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                     <p className="font-bold text-gray-900 text-sm truncate">
@@ -171,9 +174,7 @@ export default function Chat() {
                 <Link to="/messages" className="lg:hidden p-2 -ml-2 text-gray-500">
                   <ChevronLeft size={24} />
                 </Link>
-                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-bold text-ipb-green">
-                  {activeClaim?.item_user_id === user.id ? activeClaim?.claim_user?.full_name?.charAt(0) : (activeClaim?.item?.user?.full_name || activeClaim?.item?.owner?.full_name)?.charAt(0)}
-                </div>
+                <UserAvatar user={activeClaim ? getClaimParticipant(activeClaim) : null} className="w-10 h-10 bg-gray-100 shrink-0" />
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">
                     {activeClaim?.item_user_id === user.id ? activeClaim?.claim_user?.full_name : (activeClaim?.item?.user?.full_name || activeClaim?.item?.owner?.full_name)}
