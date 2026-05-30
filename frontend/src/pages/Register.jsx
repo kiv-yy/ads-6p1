@@ -10,9 +10,9 @@ export default function Register() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     full_name: '',
-    faculty: '',
-    nim: '',
+    username: '',
   });
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -24,11 +24,21 @@ export default function Register() {
       setEmailError('Hanya untuk email IPB dengan domain @apps.ipb.ac.id.');
       return;
     }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Konfirmasi password tidak sama.');
+      return;
+    }
     setLoading(true);
     setError('');
     setEmailError('');
     try {
-      await register(formData);
+      await register({
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name,
+        nim: formData.username,
+        faculty: null,
+      });
       navigate(`/verify-email?email=${encodeURIComponent(formData.email.toLowerCase())}`, {
         replace: true,
         state: { fromRegister: true },
@@ -42,6 +52,8 @@ export default function Register() {
           replace: true,
           state: { fromRegister: true },
         });
+      } else if (message.toLowerCase().includes('nim already registered')) {
+        setError('Username sudah terdaftar.');
       } else {
         setError(message);
       }
@@ -61,28 +73,25 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <Input 
-              label="Nama Lengkap" 
-              placeholder="Masukkan nama lengkap" 
+              label="Nama" 
+              placeholder="Masukkan nama" 
               value={formData.full_name}
               onChange={(e) => setFormData({...formData, full_name: e.target.value})}
               required
             />
           </div>
-          <Input 
-            label="NIM / NIP" 
-            placeholder="G641..." 
-            value={formData.nim}
-            onChange={(e) => setFormData({...formData, nim: e.target.value})}
-          />
-          <Input 
-            label="Fakultas" 
-            placeholder="FMIPA" 
-            value={formData.faculty}
-            onChange={(e) => setFormData({...formData, faculty: e.target.value})}
-          />
+          <div className="md:col-span-2">
+            <Input
+              label="Username"
+              placeholder="Masukkan username"
+              value={formData.username}
+              onChange={(e) => setFormData({...formData, username: e.target.value})}
+              required
+            />
+          </div>
           <div className="md:col-span-2">
             <Input 
-              label="Email Apps IPB" 
+              label="Email" 
               type="email" 
               placeholder="nama@apps.ipb.ac.id" 
               value={formData.email}
@@ -102,6 +111,16 @@ export default function Register() {
               placeholder="Minimal 8 karakter" 
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
+              required
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Input
+              label="Konfirmasi Password"
+              type="password"
+              placeholder="Ulangi password"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
               required
             />
           </div>
