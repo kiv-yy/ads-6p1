@@ -11,6 +11,7 @@ export default function Home() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const greetingName = user?.username || user?.full_name?.split(' ')[0] || 'Civitas';
 
   useEffect(() => {
     const fetchLatestItems = async () => {
@@ -31,7 +32,7 @@ export default function Home() {
       {/* Hero Section */}
       <header className="relative space-y-8">
         <div className="flex flex-col">
-          <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Halo, {user?.full_name?.split(' ')[0] || 'Civitas'}! 👋</h2>
+          <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Halo, {greetingName}!</h2>
           <p className="text-gray-500 mt-1">Temukan barangmu yang hilang atau laporkan penemuanmu hari ini.</p>
         </div>
 
