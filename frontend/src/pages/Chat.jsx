@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Image as ImageIcon, MessageCircle, Paperclip, Search, Send } from 'lucide-react';
+import { ChevronLeft, FilePlus, FileText, MessageCircle, Paperclip, Search, Send, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
 import { Card, Button, Badge, UserAvatar } from '../components/UI';
@@ -15,6 +15,8 @@ export default function Chat() {
   const [activeClaim, setActiveClaim] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sendingAttachment, setSendingAttachment] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState(null);
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState('');
   const scrollRef = useRef(null);
   const ws = useRef(null);
   const fileInputRef = useRef(null);
@@ -48,43 +50,42 @@ export default function Chat() {
     });
   };
   const isImageAttachment = (url) => /\.(jpe?g|png|webp|gif)(\?.*)?$/i.test(url || '');
-  const sendMessagePayload = (payload) => {
-    if (!claimId) return;
+  const sendMessagePayload = async (payload) => {
+    if (!claimId) return null;
 
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(payload));
-      return;
+      return null;
     }
 
-    api.post(`/claims/${claimId}/chat`, payload)
-      .then((response) => {
-        setMessages((prev) => {
-          if (prev.some((message) => String(message.id) === String(response.data.id))) return prev;
-          return [...prev, response.data];
-        });
-      })
-      .catch(console.error);
+    const response = await api.post(`/claims/${claimId}/chat`, payload);
+    setMessages((prev) => {
+      if (prev.some((message) => String(message.id) === String(response.data.id))) return prev;
+      return [...prev, response.data];
+    });
+    return response.data;
   };
-  const uploadAndSendAttachment = async (file) => {
-    if (!file || !claimId || sendingAttachment) return;
+  const uploadAttachment = async (file) => {
+    if (!file || !claimId) return null;
     const formData = new FormData();
     formData.append('file', file);
 
-    setSendingAttachment(true);
-    try {
-      const uploadResponse = await api.post(`/claims/${claimId}/chat/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      sendMessagePayload({
-        content: file.type?.startsWith('image/') ? '' : file.name,
-        image_attachment: uploadResponse.data.image_url,
-      });
-    } catch (error) {
-      console.error('Error uploading chat attachment:', error);
-    } finally {
-      setSendingAttachment(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    const uploadResponse = await api.post(`/claims/${claimId}/chat/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return uploadResponse.data.image_url;
+  };
+  const setAttachmentFile = (file) => {
+    if (!file) return;
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+    setPendingAttachment(file);
+    setAttachmentPreviewUrl(file.type?.startsWith('image/') ? URL.createObjectURL(file) : '');
+  };
+  const clearPendingAttachment = () => {
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+    setPendingAttachment(null);
+    setAttachmentPreviewUrl('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   useEffect(() => {
@@ -148,24 +149,46 @@ export default function Chat() {
     }
   }, [messages]);
 
-  const handleSendMessage = (e) => {
+  useEffect(() => () => {
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+  }, [attachmentPreviewUrl]);
+
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     const messageText = newMessage.trim();
-    if (!messageText || !claimId) return;
+    if ((!messageText && !pendingAttachment) || !claimId || sendingAttachment) return;
 
-    sendMessagePayload({ content: messageText });
-    setNewMessage('');
+    setSendingAttachment(true);
+    try {
+      if (pendingAttachment) {
+        const attachmentUrl = await uploadAttachment(pendingAttachment);
+        await sendMessagePayload({
+          content: pendingAttachment.type?.startsWith('image/') ? '' : pendingAttachment.name,
+          image_attachment: attachmentUrl,
+        });
+        clearPendingAttachment();
+      }
+
+      if (messageText) {
+        await sendMessagePayload({ content: messageText });
+        setNewMessage('');
+      }
+    } catch (error) {
+      console.error('Error sending chat message:', error);
+    } finally {
+      setSendingAttachment(false);
+    }
   };
 
   const handleFileChange = (event) => {
-    uploadAndSendAttachment(event.target.files?.[0]);
+    setAttachmentFile(event.target.files?.[0]);
   };
 
   const handlePaste = (event) => {
     const imageFile = Array.from(event.clipboardData?.files || []).find((file) => file.type.startsWith('image/'));
     if (!imageFile) return;
     event.preventDefault();
-    uploadAndSendAttachment(imageFile);
+    setAttachmentFile(imageFile);
   };
 
   return (
@@ -305,31 +328,58 @@ export default function Chat() {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100 flex gap-2 items-center">
-              <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={sendingAttachment}
-                className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500 shrink-0 hover:bg-gray-100 transition-colors disabled:opacity-50"
-                title="Unggah file"
-              >
-                {sendingAttachment ? <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-ipb-green animate-spin" /> : <ImageIcon size={20} />}
-              </button>
-              <input
-                className="flex-1 bg-gray-50 border border-transparent focus:border-ipb-green focus:bg-white rounded-2xl px-6 py-3 text-sm outline-none transition-all"
-                placeholder="Tulis pesan..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onPaste={handlePaste}
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || sendingAttachment}
-                className="w-12 h-12 bg-ipb-green text-white rounded-2xl flex items-center justify-center shadow-lg shadow-ipb-green/20 active:scale-90 transition-all disabled:opacity-50 disabled:grayscale"
-              >
-                <Send size={20} />
-              </button>
+            <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100 space-y-3">
+              {pendingAttachment && (
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                  <div className="w-14 h-14 rounded-xl bg-white border border-gray-100 flex items-center justify-center overflow-hidden shrink-0 text-ipb-green">
+                    {attachmentPreviewUrl ? (
+                      <img src={attachmentPreviewUrl} alt="Preview lampiran" className="w-full h-full object-cover" />
+                    ) : (
+                      <FileText size={24} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-gray-900 truncate">{pendingAttachment.name}</p>
+                    <p className="text-xs text-gray-500">{Math.ceil(pendingAttachment.size / 1024)} KB siap dikirim</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearPendingAttachment}
+                    disabled={sendingAttachment}
+                    className="w-9 h-9 rounded-full bg-white text-gray-500 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors disabled:opacity-50"
+                    title="Batalkan file"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex gap-2 items-center">
+                <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={sendingAttachment}
+                  className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500 shrink-0 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  title="Unggah file"
+                >
+                  {sendingAttachment ? <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-ipb-green animate-spin" /> : <FilePlus size={20} />}
+                </button>
+                <input
+                  className="flex-1 bg-gray-50 border border-transparent focus:border-ipb-green focus:bg-white rounded-2xl px-6 py-3 text-sm outline-none transition-all"
+                  placeholder="Tulis pesan..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onPaste={handlePaste}
+                />
+                <button
+                  type="submit"
+                  disabled={(!newMessage.trim() && !pendingAttachment) || sendingAttachment}
+                  className="w-12 h-12 bg-ipb-green text-white rounded-2xl flex items-center justify-center shadow-lg shadow-ipb-green/20 active:scale-90 transition-all disabled:opacity-50 disabled:grayscale"
+                >
+                  <Send size={20} />
+                </button>
+              </div>
             </form>
           </>
         ) : (
