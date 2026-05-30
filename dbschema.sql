@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS users (
     username        VARCHAR(50)     UNIQUE,
     email_ipb       VARCHAR(150)    NOT NULL UNIQUE,
     nim             VARCHAR(20)     UNIQUE,
+    jurusan         VARCHAR(100),
     fakultas        VARCHAR(100),
     password        VARCHAR(255)    NOT NULL,
     foto_profile    TEXT,
@@ -54,6 +55,7 @@ COMMENT ON COLUMN users.user_id         IS 'Primary key UUID';
 COMMENT ON COLUMN users.username        IS 'Username pengguna, harus unik jika diisi';
 COMMENT ON COLUMN users.email_ipb       IS 'Email institusi IPB, harus unik';
 COMMENT ON COLUMN users.nim             IS 'Nomor Induk Mahasiswa, harus unik';
+COMMENT ON COLUMN users.jurusan         IS 'Nama jurusan/program studi mahasiswa';
 COMMENT ON COLUMN users.role            IS 'mahasiswa | admin';
 COMMENT ON COLUMN users.status_akun     IS 'aktif | nonaktif | banned';
 

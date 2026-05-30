@@ -19,6 +19,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: str = Field(min_length=2, max_length=100)
     username: str | None = Field(default=None, min_length=3, max_length=50)
+    major: str | None = Field(default=None, max_length=100)
     faculty: str | None = Field(default=None, max_length=100)
     nim: str | None = Field(default=None, min_length=3, max_length=20)
 
@@ -38,6 +39,7 @@ class UserProfileUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=2, max_length=100)
     username: str | None = Field(default=None, min_length=3, max_length=50)
     nim: str | None = Field(default=None, min_length=3, max_length=20)
+    major: str | None = Field(default=None, max_length=100)
     faculty: str | None = Field(default=None, max_length=100)
     profile_photo: str | None = Field(default=None, max_length=2000)
 
@@ -70,6 +72,11 @@ class UserRead(UserBase):
     @property
     def fakultas(self) -> str | None:
         return self.faculty
+
+    @computed_field
+    @property
+    def jurusan(self) -> str | None:
+        return self.major
 
     @computed_field
     @property

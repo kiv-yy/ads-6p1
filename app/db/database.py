@@ -51,6 +51,8 @@ def ensure_runtime_columns() -> None:
             user_columns = {column["name"] for column in inspector.get_columns("users")}
             if "username" not in user_columns:
                 connection.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(50)"))
+            if "jurusan" not in user_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN jurusan VARCHAR(100)"))
             if engine.dialect.name == "postgresql":
                 connection.execute(text("ALTER TABLE users ALTER COLUMN nim DROP NOT NULL"))
 

@@ -33,6 +33,7 @@ class UserRepository(BaseRepository):
             email=user_in.email,
             full_name=user_in.full_name,
             username=user_in.username,
+            major=user_in.major,
             faculty=user_in.faculty,
             nim=user_in.nim,
             hashed_password=self.password_service.hash(user_in.password),

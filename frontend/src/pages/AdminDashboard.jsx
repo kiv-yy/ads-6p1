@@ -44,17 +44,17 @@ export default function AdminDashboard() {
   const normalizedSearch = search.trim().toLowerCase();
   const filteredUsers = users.filter((u) => {
     if (!normalizedSearch) return true;
-    return [u.full_name, u.email, u.email_ipb, u.nim, u.faculty]
+    return [u.full_name, u.email, u.email_ipb, u.nim, u.major, u.faculty]
       .some((value) => String(value || '').toLowerCase().includes(normalizedSearch));
   });
   const filteredReports = reports.filter((report) => {
     if (!normalizedSearch) return true;
-    return [report.post?.name, report.post?.type, report.reporter?.full_name, report.reporter?.email, report.reason, report.status]
+    return [report.post?.name, report.post?.type, report.reporter?.full_name, report.reporter?.nim, report.reporter?.major, report.reporter?.faculty, report.reason, report.status]
       .some((value) => String(value || '').toLowerCase().includes(normalizedSearch));
   });
   const filteredItems = items.filter((item) => {
     if (!normalizedSearch) return true;
-    return [item.name, item.category, item.type, item.status, item.location, item.owner?.full_name, item.owner?.email]
+    return [item.name, item.category, item.type, item.status, item.location, item.owner?.full_name, item.owner?.nim, item.owner?.major, item.owner?.faculty]
       .some((value) => String(value || '').toLowerCase().includes(normalizedSearch));
   });
   const visibleRows = tab === 'users' ? filteredUsers : tab === 'moderation' ? filteredReports : filteredItems;
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
                   {tab === 'users' ? (
                     <>
                       <th className="px-6 py-4">Nama</th>
-                      <th className="px-6 py-4">Fakultas / NIM</th>
+                      <th className="px-6 py-4">Data Akademik</th>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4 text-right">Aksi</th>
                     </>
@@ -258,8 +258,8 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-900">{u.full_name}</td>
                     <td className="px-6 py-4 text-gray-500">
-                      <div>{u.faculty}</div>
-                      <div className="text-[10px]">{u.nim || 'N/A'}</div>
+                      <div>{u.faculty || 'Fakultas belum diisi'}</div>
+                      <div className="text-[10px]">{u.major || 'Jurusan belum diisi'} / {u.nim || 'NIM belum diisi'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <Badge variant={u.is_active ? 'success' : 'danger'}>{u.is_active ? 'Aktif' : 'Terblokir'}</Badge>
@@ -294,7 +294,9 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{report.reporter?.full_name || "User"}</div>
-                      <div className="text-xs text-gray-500">{report.reporter?.email || "Email N/A"}</div>
+                      <div className="text-xs text-gray-500">
+                        {[report.reporter?.nim, report.reporter?.major, report.reporter?.faculty].filter(Boolean).join(' | ') || 'Data diri belum lengkap'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 max-w-xs">
                       <p className="line-clamp-2 text-gray-600">{report.reason}</p>
@@ -353,7 +355,9 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{item.owner?.full_name || 'User'}</div>
-                      <div className="text-xs text-gray-500">{item.owner?.email || 'Email N/A'}</div>
+                      <div className="text-xs text-gray-500">
+                        {[item.owner?.nim, item.owner?.major, item.owner?.faculty].filter(Boolean).join(' | ') || 'Data diri belum lengkap'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">{item.category}</td>
                     <td className="px-6 py-4">

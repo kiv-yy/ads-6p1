@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, Mail, ChevronLeft, Share2, Package, MessageCircle, ShieldCheck, Check, X, Flag } from 'lucide-react';
+import { BookOpen, Calendar, Check, ChevronLeft, Clock, Flag, GraduationCap, IdCard, MapPin, MessageCircle, Package, Share2, ShieldCheck, X } from 'lucide-react';
 import api from '../api/axios';
 import { Button, Card, Badge, UserAvatar } from '../components/UI';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,6 +34,11 @@ export default function ItemDetail() {
   const visibleClaims = claims.filter((claim) => claim.status !== 'ditolak');
   const claimCtaLabel = item && isLostItem(item.type) ? 'Saya Menemukan Barang Ini' : 'Ajukan Klaim Barang Ini';
   const reporter = item?.user || item?.owner;
+  const userIdentityLines = (targetUser) => [
+    { icon: IdCard, label: 'NIM', value: targetUser?.nim || 'NIM belum diisi' },
+    { icon: BookOpen, label: 'Jurusan', value: targetUser?.major || 'Jurusan belum diisi' },
+    { icon: GraduationCap, label: 'Fakultas', value: targetUser?.faculty || 'Fakultas belum diisi' },
+  ];
 
   const fetchClaims = async (loadedItem = item) => {
     if (!currentUser || !loadedItem) return;
@@ -326,15 +331,20 @@ export default function ItemDetail() {
               <UserAvatar user={reporter} className="w-14 h-14 bg-gray-100" textClassName="text-lg" />
               <div>
                 <p className="font-bold text-gray-900">{reporter?.full_name || 'Anonim User'}</p>
-                <p className="text-sm text-gray-500">{reporter?.faculty || 'Ilmu Komputer'}</p>
+                <p className="text-sm text-gray-500">{reporter?.major || 'Jurusan belum diisi'}</p>
               </div>
             </div>
             
             <div className="space-y-3 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-3 text-gray-600 text-sm">
-                <Mail size={18} className="text-gray-400" />
-                <span className="truncate">{reporter?.email || 'user@apps.ipb.ac.id'}</span>
-              </div>
+              {userIdentityLines(reporter).map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-center gap-3 text-gray-600 text-sm">
+                  <Icon size={18} className="text-gray-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{label}</p>
+                    <span className="truncate block">{value}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
 
@@ -426,7 +436,13 @@ export default function ItemDetail() {
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                   <p className="font-bold text-sm text-gray-900">{claim.claim_user?.full_name || claim.claimant_name}</p>
-                                  <p className="text-xs text-gray-500">{claim.claim_user?.email || 'Pengaju klaim'}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {[
+                                      claim.claim_user?.nim,
+                                      claim.claim_user?.major,
+                                      claim.claim_user?.faculty,
+                                    ].filter(Boolean).join(' | ') || 'Data diri belum lengkap'}
+                                  </p>
                                 </div>
                                 {claim.status === 'pending' && (
                                   <Badge variant={getClaimStatusVariant(claim.status)}>

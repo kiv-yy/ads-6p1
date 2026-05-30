@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, Edit3, LogOut, Mail, MapPin, Package, Save, ShieldCheck, Trash2, User as UserIcon, X } from 'lucide-react';
+import { BookOpen, Camera, Edit3, GraduationCap, LogOut, Mail, MapPin, Package, Save, ShieldCheck, Trash2, User as UserIcon, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
 import { Card, Button, Badge, Input } from '../components/UI';
@@ -19,6 +19,7 @@ export default function Profile() {
     full_name: '',
     username: '',
     nim: '',
+    major: '',
     faculty: '',
   });
 
@@ -28,6 +29,7 @@ export default function Profile() {
       full_name: user.full_name || '',
       username: user.username || '',
       nim: user.nim || '',
+      major: user.major || '',
       faculty: user.faculty || '',
     });
   }, [user]);
@@ -65,6 +67,7 @@ export default function Profile() {
         full_name: profileForm.full_name,
         username: profileForm.username,
         nim: profileForm.nim,
+        major: profileForm.major || null,
         faculty: profileForm.faculty || null,
       });
       updateUser(response.data);
@@ -107,6 +110,7 @@ export default function Profile() {
       full_name: user?.full_name || '',
       username: user?.username || '',
       nim: user?.nim || '',
+      major: user?.major || '',
       faculty: user?.faculty || '',
     });
   };
@@ -136,6 +140,7 @@ export default function Profile() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{user?.full_name || 'User IPB'}</h2>
                   <p className="text-gray-500 font-medium">{user?.faculty || 'Fakultas belum diisi'}</p>
+                  <p className="text-sm text-gray-400">{user?.major || 'Jurusan belum diisi'}</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-500">
                   <div className="flex items-center gap-2 justify-center md:justify-start">
@@ -150,6 +155,14 @@ export default function Profile() {
                     <ShieldCheck size={16} className="text-gray-400" />
                     <span>NIM: {user?.nim || '-'}</span>
                   </div>
+                  <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <BookOpen size={16} className="text-gray-400" />
+                    <span>Jurusan: {user?.major || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <GraduationCap size={16} className="text-gray-400" />
+                    <span>Fakultas: {user?.faculty || '-'}</span>
+                  </div>
                 </div>
               </>
             ) : (
@@ -159,9 +172,8 @@ export default function Profile() {
                 </div>
                 <Input label="Username" value={profileForm.username} onChange={(event) => handleProfileChange('username', event.target.value)} required />
                 <Input label="NIM" value={profileForm.nim} onChange={(event) => handleProfileChange('nim', event.target.value)} required />
-                <div className="sm:col-span-2">
-                  <Input label="Fakultas" value={profileForm.faculty} onChange={(event) => handleProfileChange('faculty', event.target.value)} placeholder="Contoh: FMIPA" />
-                </div>
+                <Input label="Jurusan" value={profileForm.major} onChange={(event) => handleProfileChange('major', event.target.value)} placeholder="Contoh: Ilmu Komputer" />
+                <Input label="Fakultas" value={profileForm.faculty} onChange={(event) => handleProfileChange('faculty', event.target.value)} placeholder="Contoh: FMIPA" />
                 {profileError && <p className="sm:col-span-2 text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{profileError}</p>}
                 <div className="sm:col-span-2 flex gap-3">
                   <Button type="submit" disabled={saving} className="flex-1">
