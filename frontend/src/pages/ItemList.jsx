@@ -17,6 +17,12 @@ export default function ItemList() {
   
   const activeTab = searchParams.get('type') || 'LOST';
   const activeCategory = searchParams.get('category') || 'Semua';
+  const activeStatus = searchParams.get('status') || 'Semua';
+  const statusOptions = [
+    { label: 'Semua', value: 'Semua' },
+    { label: 'Selesai', value: 'resolved' },
+    { label: activeTab === 'LOST' ? 'Masih Hilang' : 'Masih Ditemukan', value: 'open' },
+  ];
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -24,10 +30,12 @@ export default function ItemList() {
       try {
         const typeFilter = activeTab;
         const catFilter = activeCategory !== 'Semua' ? activeCategory : '';
+        const statusFilter = activeStatus !== 'Semua' ? activeStatus : '';
         const query = searchQuery;
         
         let url = `/items?type=${typeFilter}`;
         if (catFilter) url += `&category=${catFilter}`;
+        if (statusFilter) url += `&status=${statusFilter}`;
         if (query) url += `&q=${query}`;
         
         const response = await api.get(url);
@@ -39,7 +47,7 @@ export default function ItemList() {
       }
     };
     fetchItems();
-  }, [activeTab, activeCategory, searchParams]);
+  }, [activeTab, activeCategory, activeStatus, searchParams]);
 
   const toggleTab = (type) => {
     setSearchParams(prev => {
@@ -51,6 +59,22 @@ export default function ItemList() {
   const setCategory = (cat) => {
     setSearchParams(prev => {
       prev.set('category', cat);
+      return prev;
+    });
+  };
+
+  const setStatus = (status) => {
+    setSearchParams(prev => {
+      if (status === 'Semua') prev.delete('status');
+      else prev.set('status', status);
+      return prev;
+    });
+  };
+
+  const resetFilters = () => {
+    setSearchParams(prev => {
+      prev.delete('category');
+      prev.delete('status');
       return prev;
     });
   };
@@ -85,7 +109,7 @@ export default function ItemList() {
               onClick={() => setShowFilters((value) => !value)}
               className={cn(
                 "absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-colors",
-                showFilters || activeCategory !== 'Semua' ? "bg-ipb-green text-white" : "text-gray-500 hover:bg-gray-100"
+                showFilters || activeCategory !== 'Semua' || activeStatus !== 'Semua' ? "bg-ipb-green text-white" : "text-gray-500 hover:bg-gray-100"
               )}
               aria-label="Buka filter"
             >
@@ -96,30 +120,52 @@ export default function ItemList() {
         </form>
 
         {showFilters && (
-          <Card className="p-4 space-y-3">
+          <Card className="p-4 space-y-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-bold text-gray-800">Filter kategori</p>
-              {activeCategory !== 'Semua' && (
-                <button onClick={() => setCategory('Semua')} className="text-xs font-bold text-ipb-green">
+              <p className="text-sm font-bold text-gray-800">Filter pencarian</p>
+              {(activeCategory !== 'Semua' || activeStatus !== 'Semua') && (
+                <button onClick={resetFilters} className="text-xs font-bold text-ipb-green">
                   Reset
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-sm font-medium transition-all border",
-                    activeCategory === cat
-                      ? "bg-ipb-green text-white border-ipb-green"
-                      : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
+            <div className="space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Status laporan</p>
+              <div className="flex flex-wrap gap-2">
+                {statusOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setStatus(option.value)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl text-sm font-medium transition-all border",
+                      activeStatus === option.value
+                        ? "bg-ipb-green text-white border-ipb-green"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Kategori barang</p>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setCategory(cat)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl text-sm font-medium transition-all border",
+                      activeCategory === cat
+                        ? "bg-ipb-green text-white border-ipb-green"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
           </Card>
         )}

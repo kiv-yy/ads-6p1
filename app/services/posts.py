@@ -57,13 +57,8 @@ class ItemRepository(BaseRepository):
             else:
                 query = query.filter(Item.status != ItemStatus.DELETED.value)
         elif current_user:
-            # Authenticated users see active items, OR their own resolved items
             if status:
-                if status == ItemStatus.RESOLVED:
-                    # Only see their own resolved items
-                    query = query.filter(Item.status == ItemStatus.RESOLVED.value, Item.owner_id == current_user.id)
-                else:
-                    query = query.filter(Item.status == status.value)
+                query = query.filter(Item.status == status.value)
             else:
                 # Default listing (no status specified)
                 # Show active items OR user's own non-deleted items
@@ -74,12 +69,8 @@ class ItemRepository(BaseRepository):
                     )
                 ).filter(Item.status != ItemStatus.DELETED.value)
         else:
-            # Unauthenticated users only see active (OPEN) items
             if status:
-                if status == ItemStatus.RESOLVED:
-                    query = query.filter(Item.status == "impossible-status-to-hide")
-                else:
-                    query = query.filter(Item.status == status.value)
+                query = query.filter(Item.status == status.value)
             else:
                 query = query.filter(Item.status == ItemStatus.OPEN.value)
 
