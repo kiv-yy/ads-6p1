@@ -76,7 +76,7 @@ export default function CreateReport() {
           onClick={() => setType('LOST')}
           className={cn(
             "flex-1 py-3 rounded-xl font-semibold transition-all",
-            type === 'LOST' ? "bg-ipb-green text-white shadow-md" : "text-gray-500 hover:bg-gray-50"
+            type === 'LOST' ? "bg-red-500 text-white shadow-md shadow-red-500/20" : "text-gray-500 hover:bg-gray-50"
           )}
         >
           Barang Hilang

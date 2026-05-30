@@ -129,7 +129,7 @@ export default function ItemList() {
             onClick={() => toggleTab('LOST')}
             className={cn(
               "flex-1 py-2.5 rounded-xl font-semibold transition-all duration-300",
-              activeTab === 'LOST' ? "bg-ipb-green text-white shadow-md" : "text-gray-500 hover:bg-gray-50"
+              activeTab === 'LOST' ? "bg-red-500 text-white shadow-md shadow-red-500/20" : "text-gray-500 hover:bg-gray-50"
             )}
           >
             Barang Hilang

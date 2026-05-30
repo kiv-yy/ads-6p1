@@ -483,8 +483,7 @@ export default function ItemDetail() {
                         </div>
                       )}
                     </Card>
-                    <Button 
-                      variant="danger" 
+                    <Button
                       className="w-full py-4 text-base font-bold"
                       onClick={handleResolveItem}
                       disabled={actionLoading}

@@ -185,7 +185,7 @@ export default function Profile() {
                 <Edit3 size={18} /> Edit Profil
               </Button>
             )}
-            <Button variant="danger" className="bg-red-50 text-red-600 hover:bg-red-100 border-none px-6" onClick={logout}>
+            <Button variant="secondary" className="px-6 text-gray-600" onClick={logout}>
               <LogOut size={18} /> Keluar
             </Button>
           </div>
