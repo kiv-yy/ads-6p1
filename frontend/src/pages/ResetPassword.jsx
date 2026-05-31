@@ -40,12 +40,6 @@ export default function ResetPassword() {
   return (
     <AuthLayout>
       <div className="w-full max-w-md space-y-6 animate-in fade-in zoom-in duration-300">
-        <Link to="/login" className="inline-flex">
-          <Button type="button" variant="secondary" className="gap-2 rounded-full px-5 py-2.5">
-            <ChevronLeft size={18} />
-            Kembali
-          </Button>
-        </Link>
         <div className="text-center space-y-2">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-ipb-green text-2xl font-bold text-white shadow-lg shadow-ipb-green/20">
             L
@@ -68,6 +62,12 @@ export default function ResetPassword() {
             <Button type="submit" className="w-full py-3" disabled={loading}>
               {loading ? 'Menyimpan...' : 'Simpan Password Baru'}
             </Button>
+            <Link to="/login" className="block">
+              <Button type="button" variant="secondary" className="w-full py-3">
+                <ChevronLeft size={18} />
+                Kembali
+              </Button>
+            </Link>
           </form>
         )}
       </div>

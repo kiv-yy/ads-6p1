@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import api from '../api/axios';
 import { Button, Input } from '../components/UI';
 import AuthLayout from '../components/AuthLayout';
@@ -71,6 +72,12 @@ export default function ForgotPassword() {
             <Button type="submit" className="w-full py-3" disabled={loading}>
               {loading ? 'Mengirim...' : 'Kirim Link Reset'}
             </Button>
+            <Link to="/login" className="block">
+              <Button type="button" variant="secondary" className="w-full py-3">
+                <ChevronLeft size={18} />
+                Kembali
+              </Button>
+            </Link>
           </form>
         )}
       </div>
