@@ -38,7 +38,6 @@ export default function ForgotPassword() {
           </div>
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-ipb-green">Account Recovery</p>
           <h1 className="text-2xl font-bold text-gray-900">Lupa Password</h1>
-          <p className="text-gray-500">Link reset akan dikirim ke email IPB kamu.</p>
         </div>
         {result ? (
           <div className="space-y-4">

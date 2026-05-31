@@ -77,7 +77,6 @@ export default function Register() {
           </div>
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-ipb-green">User Register</p>
           <h1 className="text-2xl font-bold text-gray-900">Daftar Akun Baru</h1>
-          <p className="text-gray-500">Lengkapi data diri Anda sebagai civitas IPB</p>
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
