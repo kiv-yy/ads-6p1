@@ -5,5 +5,8 @@ frontend/
 *.sqlite
 *.sqlite3
 *.log
-app/static/uploads/
+backend/app/static/uploads/
+backend/database/*.db
+backend/database/*.sqlite
+backend/database/*.sqlite3
 __pycache__/

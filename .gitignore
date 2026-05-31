@@ -7,10 +7,14 @@ __pycache__/
 .venv/
 venv/
 .env
+backend/.env
 *.db
 *.sqlite
 *.sqlite3
-app/static/uploads/
+backend/app/static/uploads/
+backend/database/*.db
+backend/database/*.sqlite
+backend/database/*.sqlite3
 
 # Node / Vite
 logs
