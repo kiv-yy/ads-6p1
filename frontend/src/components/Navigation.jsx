@@ -38,8 +38,8 @@ export const Sidebar = ({ collapsed = false, onToggle }) => {
         collapsed ? "w-20" : "w-64"
       )}
     >
-      <div className={cn("mb-8 flex min-h-12 items-center gap-3", collapsed ? "px-4 justify-center" : "px-8")}>
-        <BrandLogo variant="white" className="w-12 h-12 shrink-0" imageClassName="scale-110" />
+      <div className={cn("mb-8 flex min-h-12 items-center gap-3", collapsed ? "px-4 justify-center" : "px-8 translate-x-2")}>
+        <BrandLogo variant="white" className="w-11 h-11 shrink-0" />
         <div className={cn("flex flex-col justify-center leading-tight overflow-hidden transition-all", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
           <h1 className="font-bold text-white text-lg tracking-tight">Lost&Found</h1>
           <p className="text-[10px] uppercase tracking-widest text-white/60 font-semibold">IPB University</p>
