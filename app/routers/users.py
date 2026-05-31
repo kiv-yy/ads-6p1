@@ -115,7 +115,7 @@ def forgot_password(
     except EmailDeliveryError:
         reset_url = None
     return schemas.PasswordResetResponse(
-        message="Jika email terdaftar, link reset password telah dikirim ke email IPB kamu.",
+        message="Email link reset password telah dikirim ke email anda.",
         reset_url=reset_url,
     )
 
