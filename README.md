@@ -2,16 +2,18 @@
 
 IPB Lost & Found adalah aplikasi web untuk membantu mahasiswa IPB University membuat laporan barang hilang, melaporkan barang ditemukan, mengajukan klaim, berkomunikasi lewat chat, dan melakukan moderasi laporan.
 
-## Tech Stack
+## 🧰 Tech Stack
 
-- Backend: Python, FastAPI, SQLAlchemy, Pydantic v2.
-- Database: PostgreSQL untuk production, SQLite untuk development lokal.
-- Authentication: OAuth2 Password Flow, JWT, passlib.
-- Email: Resend atau SMTP untuk verifikasi email dan reset password.
-- Frontend: React, Vite, Tailwind CSS, Axios, React Router.
-- Deployment: Railway untuk backend dan Vercel untuk frontend.
+| Bagian | Teknologi |
+| --- | --- |
+| Backend | Python, FastAPI, SQLAlchemy, Pydantic v2 |
+| Database | PostgreSQL untuk production, SQLite untuk development lokal |
+| Authentication | OAuth2 Password Flow, JWT, passlib |
+| Email Service | Resend atau SMTP untuk verifikasi email dan reset password |
+| Frontend | React, Vite, Tailwind CSS, Axios, React Router |
+| Deployment | Railway untuk backend dan Vercel untuk frontend |
 
-## Requirement
+## 📋 Requirement
 
 - Python 3.11 atau lebih baru.
 - Node.js 20 atau lebih baru.
@@ -19,7 +21,7 @@ IPB Lost & Found adalah aplikasi web untuk membantu mahasiswa IPB University mem
 - PostgreSQL opsional untuk production atau testing database eksternal.
 - Akun Resend/SMTP jika ingin mengirim email sungguhan.
 
-## Fitur
+## ✨ Fitur
 
 - Registrasi akun khusus email `@apps.ipb.ac.id`.
 - Verifikasi email sebelum login.
@@ -36,24 +38,25 @@ IPB Lost & Found adalah aplikasi web untuk membantu mahasiswa IPB University mem
 - Notifikasi untuk chat, klaim, dan update laporan.
 - Admin panel untuk moderasi user, laporan, report, dan bulk action.
 
-## Struktur Repository
+## 📁 Struktur Repository
 
 ```text
-backend/
-  app/
-  database/
-frontend/
-requirements.txt
-LICENSE
-readme.md
+IPB-Lost-Found/
+├── backend/
+│   ├── app/
+│   └── database/
+├── frontend/
+├── requirements.txt
+├── LICENSE
+└── README.md
 ```
 
-## Dokumentasi Service
+## 📚 Dokumentasi Service
 
-- Backend: [backend/readme.md](backend/readme.md)
+- Backend: [backend/README.md](backend/README.md)
 - Frontend: [frontend/README.md](frontend/README.md)
 
-## Contributor
+## 👥 Contributor
 
 - Hakim Ilyas Azhar (G6401231077)
 - Kivi Adelio (G6401231047)
