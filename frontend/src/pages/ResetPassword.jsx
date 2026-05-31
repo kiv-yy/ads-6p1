@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import api from '../api/axios';
 import { Button, Input } from '../components/UI';
 import AuthLayout from '../components/AuthLayout';
@@ -14,6 +14,8 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -56,18 +58,48 @@ export default function ResetPassword() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
-            <Input label="Password Baru" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} />
-            <Input label="Konfirmasi Password" type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required minLength={8} />
+            <div className="relative">
+              <Input
+                label="Password Baru"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="pr-12"
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute right-4 top-[3.1rem] -translate-y-1/2 text-gray-400 hover:text-ipb-green transition-colors"
+                aria-label={showPassword ? 'Sembunyikan password baru' : 'Lihat password baru'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                label="Konfirmasi Password"
+                type={showConfirmation ? 'text' : 'password'}
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                className="pr-12"
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmation((value) => !value)}
+                className="absolute right-4 top-[3.1rem] -translate-y-1/2 text-gray-400 hover:text-ipb-green transition-colors"
+                aria-label={showConfirmation ? 'Sembunyikan konfirmasi password' : 'Lihat konfirmasi password'}
+              >
+                {showConfirmation ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {error && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
             <Button type="submit" className="w-full py-3" disabled={loading}>
               {loading ? 'Menyimpan...' : 'Simpan Password Baru'}
             </Button>
-            <Link to="/login" className="block">
-              <Button type="button" variant="secondary" className="w-full py-3">
-                <ChevronLeft size={18} />
-                Kembali
-              </Button>
-            </Link>
           </form>
         )}
       </div>

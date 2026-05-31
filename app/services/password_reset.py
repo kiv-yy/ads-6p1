@@ -49,7 +49,12 @@ class PasswordResetRepository(BaseRepository):
         self.db.add(reset)
         self.db.commit()
         reset_url = self.build_reset_url(token)
-        self.email_service.send_password_reset_email(user.email, reset_url)
+        self.email_service.send_password_reset_email(
+            user.email,
+            reset_url,
+            user.full_name,
+            self.settings.password_reset_expire_minutes,
+        )
         return None if self.email_service.is_configured() else reset_url
 
     def reset_password(self, token: str, new_password: str) -> User | None:
