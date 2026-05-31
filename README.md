@@ -11,7 +11,7 @@ IPB Lost & Found adalah aplikasi web untuk membantu mahasiswa IPB University mem
 | Bagian | Teknologi |
 | --- | --- |
 | Backend | Python, FastAPI, SQLAlchemy, Pydantic v2 |
-| Database | PostgreSQL untuk production, SQLite untuk development lokal |
+| Database | PostgreSQL |
 | Authentication | OAuth2 Password Flow, JWT, passlib |
 | Email Service | Resend atau SMTP untuk verifikasi email dan reset password |
 | Frontend | React, Vite, Tailwind CSS, Axios, React Router |
