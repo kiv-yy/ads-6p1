@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Input } from '../components/UI';
 import AuthLayout from '../components/AuthLayout';
@@ -10,7 +10,7 @@ import api from '../api/axios';
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -26,10 +26,10 @@ export default function Login() {
     setInfo('');
     setCanResendVerification(false);
     try {
-      await login(email, password);
+      await login(identifier, password);
       navigate('/');
     } catch (err) {
-      const message = err.response?.data?.detail || 'Email atau password salah. Silakan coba lagi.';
+      const message = err.response?.data?.detail || 'Email/username atau password salah. Silakan coba lagi.';
       setError(message);
       setCanResendVerification(typeof message === 'string' && message.toLowerCase().includes('belum diverifikasi'));
       console.error(err);
@@ -42,7 +42,7 @@ export default function Login() {
     setResending(true);
     setError('');
     try {
-      const response = await api.post('/auth/resend-verification', { email });
+      const response = await api.post('/auth/resend-verification', { email: identifier });
       setInfo(response.data.message);
       setCanResendVerification(false);
     } catch (requestError) {
@@ -65,13 +65,13 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative">
-              <Mail className="absolute left-4 top-[3.1rem] -translate-y-1/2 text-ipb-green/60" size={18} />
+              <UserIcon className="absolute left-4 top-[3.1rem] -translate-y-1/2 text-ipb-green/60" size={18} />
               <Input
-                label="Email Apps IPB"
-                placeholder="nama@apps.ipb.ac.id"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                label="Email Apps IPB / Username"
+                placeholder="nama@apps.ipb.ac.id atau username"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 className="pl-12"
                 required
               />
@@ -103,7 +103,7 @@ export default function Login() {
             </div>
 
             {error && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
-            {canResendVerification && (
+            {canResendVerification && identifier.includes('@') && (
               <Button type="button" variant="secondary" className="w-full py-3" onClick={handleResendVerification} disabled={resending}>
                 {resending ? 'Mengirim...' : 'Kirim Ulang Email Verifikasi'}
               </Button>

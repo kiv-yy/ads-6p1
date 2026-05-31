@@ -66,8 +66,8 @@ class AuthService:
         self.password_service = password_service or PasswordService()
         self.token_service = token_service or TokenService()
 
-    def authenticate(self, email: str, password: str) -> User | None:
-        user = UserRepository(self.db).get_by_email(email)
+    def authenticate(self, identifier: str, password: str) -> User | None:
+        user = UserRepository(self.db).get_by_email_or_username(identifier)
         if not user or not self.password_service.verify(password, user.hashed_password):
             return None
         return user

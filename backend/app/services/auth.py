@@ -38,8 +38,8 @@ class AuthFlowService:
             verification_url=verification_url,
         )
 
-    def login(self, email: str, password: str) -> schemas.Token:
-        user = CoreAuthService(self.db).authenticate(email, password)
+    def login(self, identifier: str, password: str) -> schemas.Token:
+        user = CoreAuthService(self.db).authenticate(identifier, password)
         if not user:
             raise ApiError.unauthorized("Incorrect email or password")
         if user.account_status == AccountStatus.BANNED.value:

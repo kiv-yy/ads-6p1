@@ -14,6 +14,12 @@ class UserRepository(BaseRepository):
     def get_by_email(self, email: str) -> User | None:
         return self.db.query(User).filter(User.email == email.lower()).first()
 
+    def get_by_email_or_username(self, identifier: str) -> User | None:
+        normalized = identifier.strip().lower()
+        if "@" in normalized:
+            return self.get_by_email(normalized)
+        return self.db.query(User).filter(User.username == identifier.strip()).first()
+
     def get_by_nim(self, nim: str) -> User | None:
         return self.db.query(User).filter(User.nim == nim).first()
 
