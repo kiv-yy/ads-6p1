@@ -9,12 +9,8 @@ venv/
 .env
 backend/.env
 *.db
-*.sqlite
-*.sqlite3
 backend/app/static/uploads/
 backend/database/*.db
-backend/database/*.sqlite
-backend/database/*.sqlite3
 backend/database/
 
 # Node / Vite

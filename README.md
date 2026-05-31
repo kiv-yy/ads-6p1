@@ -22,7 +22,7 @@ IPB Lost & Found adalah aplikasi web untuk membantu mahasiswa IPB University mem
 - Python 3.11 atau lebih baru.
 - Node.js 20 atau lebih baru.
 - npm.
-- PostgreSQL opsional untuk production atau testing database eksternal.
+- PostgreSQL untuk development lokal dan production.
 - Akun Resend/SMTP untuk verifikasi email.
 
 ## ✨ Fitur

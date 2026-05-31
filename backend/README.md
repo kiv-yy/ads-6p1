@@ -25,7 +25,7 @@ Repository Layer
 SQLAlchemy ORM
   |
   v
-PostgreSQL / SQLite
+PostgreSQL
 ```
 
 Komponen utama:
@@ -85,7 +85,7 @@ Copy-Item ..\.env.example .env
 Variabel utama:
 
 ```env
-DATABASE_URL=sqlite:///./ads_lost_found.db
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/ipb_lost_found
 SECRET_KEY=change-this-secret
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
@@ -97,11 +97,7 @@ RESEND_API_KEY=
 RESEND_FROM_EMAIL=IPB Lost & Found <noreply@lostfoundipb.my.id>
 ```
 
-Untuk PostgreSQL:
-
-```env
-DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/ads_lost_found
-```
+Sesuaikan `DATABASE_URL` dengan kredensial PostgreSQL lokal atau production.
 
 ## Cara Up Backend
 
