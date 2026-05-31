@@ -1,0 +1,238 @@
+{
+  "name": "IPB Lost & Found",
+  "description": "Web app Lost & Found untuk Warga IPB melaporkan, mencari, mengklaim, dan mengelola barang hilang atau ditemukan di lingkungan kampus.",
+  "framework": "react-vite",
+  "builderIo": {
+    "projectType": "web-app",
+    "contentModel": "page",
+    "target": "frontend",
+    "productionUrl": "https://ipb-lostfound.vercel.app",
+    "backendUrl": "https://lostfound-production-a153.up.railway.app"
+  },
+  "designSystem": {
+    "fontFamily": "Inter, system-ui, -apple-system, sans-serif",
+    "colors": {
+      "primary": "#003f2a",
+      "primaryDark": "#002817",
+      "primaryLight": "rgba(0, 63, 42, 0.08)",
+      "background": "#F8FAF9",
+      "surface": "#FFFFFF",
+      "text": "#111827",
+      "mutedText": "#6B7280",
+      "positive": "#059669",
+      "negative": "#EF4444",
+      "neutral": "#64748B"
+    },
+    "radius": {
+      "xl": "1rem",
+      "2xl": "1.5rem",
+      "3xl": "2rem"
+    },
+    "shadow": {
+      "soft": "0 4px 20px -2px rgba(0, 0, 0, 0.05)"
+    }
+  },
+  "assets": {
+    "logoGreen": "frontend/src/assets/logo-green.png",
+    "logoWhite": "frontend/src/assets/logo-white.png",
+    "favicon": "frontend/public/favicon.ico",
+    "readmeBanner": "assets/lostfoundipb.gif"
+  },
+  "routes": [
+    {
+      "path": "/login",
+      "page": "Login",
+      "file": "frontend/src/pages/Login.jsx",
+      "layout": "AuthLayout",
+      "access": "public",
+      "purpose": "Login menggunakan email Apps IPB atau username."
+    },
+    {
+      "path": "/register",
+      "page": "Register",
+      "file": "frontend/src/pages/Register.jsx",
+      "layout": "AuthLayout",
+      "access": "public",
+      "purpose": "Pendaftaran akun dengan nama, username, email IPB, password, dan konfirmasi password."
+    },
+    {
+      "path": "/verify-email",
+      "page": "VerifyEmail",
+      "file": "frontend/src/pages/VerifyEmail.jsx",
+      "layout": "AuthLayout",
+      "access": "public",
+      "purpose": "Verifikasi email dan kirim ulang verifikasi dengan cooldown."
+    },
+    {
+      "path": "/forgot-password",
+      "page": "ForgotPassword",
+      "file": "frontend/src/pages/ForgotPassword.jsx",
+      "layout": "AuthLayout",
+      "access": "public",
+      "purpose": "Meminta link reset password."
+    },
+    {
+      "path": "/reset-password",
+      "page": "ResetPassword",
+      "file": "frontend/src/pages/ResetPassword.jsx",
+      "layout": "AuthLayout",
+      "access": "public",
+      "purpose": "Membuat password baru melalui token reset."
+    },
+    {
+      "path": "/",
+      "page": "Home",
+      "file": "frontend/src/pages/Home.jsx",
+      "layout": "MainLayout",
+      "access": "authenticated",
+      "purpose": "Dashboard awal, shortcut laporan kehilangan/temuan, dan daftar laporan terbaru."
+    },
+    {
+      "path": "/items",
+      "page": "ItemList",
+      "file": "frontend/src/pages/ItemList.jsx",
+      "layout": "MainLayout",
+      "access": "authenticated",
+      "purpose": "Cari barang dengan filter keyword, kategori, lokasi, status, dan tipe laporan."
+    },
+    {
+      "path": "/items/:id",
+      "page": "ItemDetail",
+      "file": "frontend/src/pages/ItemDetail.jsx",
+      "layout": "MainLayout",
+      "access": "authenticated",
+      "purpose": "Detail laporan, klaim, chat setelah klaim diterima, share, preview gambar, laporkan post, dan selesaikan laporan."
+    },
+    {
+      "path": "/report",
+      "page": "CreateReport",
+      "file": "frontend/src/pages/CreateReport.jsx",
+      "layout": "MainLayout",
+      "access": "authenticated",
+      "purpose": "Membuat laporan kehilangan atau temuan beserta upload foto."
+    },
+    {
+      "path": "/messages",
+      "page": "Chat",
+      "file": "frontend/src/pages/Chat.jsx",
+      "layout": "MainLayout",
+      "access": "authenticated",
+      "purpose": "Daftar percakapan dan realtime chat."
+    },
+    {
+      "path": "/messages/:claimId",
+      "page": "Chat",
+      "file": "frontend/src/pages/Chat.jsx",
+      "layout": "MainLayout",
+      "access": "authenticated",
+      "purpose": "Percakapan untuk klaim tertentu."
+    },
+    {
+      "path": "/notifications",
+      "page": "Notifications",
+      "file": "frontend/src/pages/Notifications.jsx",
+      "layout": "MainLayout",
+      "access": "authenticated",
+      "purpose": "Riwayat notifikasi klaim, chat, laporan, dan aktivitas."
+    },
+    {
+      "path": "/profile",
+      "page": "Profile",
+      "file": "frontend/src/pages/Profile.jsx",
+      "layout": "MainLayout",
+      "access": "authenticated",
+      "purpose": "Lihat/edit data diri, foto profil, NIM, username, jurusan, fakultas, laporan, dan klaim."
+    },
+    {
+      "path": "/admin",
+      "page": "AdminDashboard",
+      "file": "frontend/src/pages/AdminDashboard.jsx",
+      "layout": "MainLayout",
+      "access": "admin",
+      "purpose": "Panel admin untuk manajemen user, laporan post, manajemen barang, dan bulk action."
+    },
+    {
+      "path": "/404",
+      "page": "NotFound",
+      "file": "frontend/src/pages/NotFound.jsx",
+      "layout": "Standalone",
+      "access": "public",
+      "purpose": "Halaman fallback."
+    }
+  ],
+  "sharedComponents": [
+    {
+      "name": "AuthLayout",
+      "file": "frontend/src/components/AuthLayout.jsx",
+      "notes": "Layout auth dengan animasi meteor, footer full width, modal Kebijakan Layanan, Keamanan Privasi, dan Pusat Bantuan."
+    },
+    {
+      "name": "Navigation",
+      "file": "frontend/src/components/Navigation.jsx",
+      "notes": "Sidebar desktop, bottom nav mobile, profil shortcut, badge notifikasi, dan state collapsed."
+    },
+    {
+      "name": "BrandLogo",
+      "file": "frontend/src/components/BrandLogo.jsx",
+      "notes": "Logo Lost & Found IPB hijau/putih tanpa background kotak."
+    },
+    {
+      "name": "UI",
+      "file": "frontend/src/components/UI.jsx",
+      "notes": "Komponen dasar seperti Button, Input, Card, Badge, dan UserAvatar."
+    }
+  ],
+  "api": {
+    "baseEnv": "VITE_API_URL",
+    "defaultLocalUrl": "http://localhost:8000",
+    "auth": {
+      "login": "POST /auth/login",
+      "register": "POST /auth/register",
+      "verifyEmail": "GET /auth/verify-email",
+      "resendVerification": "POST /auth/resend-verification",
+      "forgotPassword": "POST /auth/forgot-password",
+      "resetPassword": "POST /auth/reset-password",
+      "currentUser": "GET /users/me"
+    },
+    "items": {
+      "list": "GET /items",
+      "detail": "GET /items/{id}",
+      "create": "POST /items",
+      "uploadImage": "POST /items/upload-image",
+      "resolve": "PATCH /items/{id}/resolve"
+    },
+    "claims": {
+      "list": "GET /claims",
+      "create": "POST /claims",
+      "update": "PATCH /claims/{id}",
+      "itemClaims": "GET /items/{id}/claims"
+    },
+    "chat": {
+      "listMessages": "GET /claims/{claimId}/chat",
+      "sendMessage": "POST /claims/{claimId}/chat",
+      "uploadAttachment": "POST /claims/{claimId}/chat/upload",
+      "websocket": "WS /claims/{claimId}/chat/ws"
+    },
+    "notifications": {
+      "list": "GET /notifications",
+      "summary": "GET /notifications/summary",
+      "markOneRead": "PATCH /notifications/{id}/read",
+      "markAllRead": "PATCH /notifications/read-all"
+    },
+    "admin": {
+      "users": "GET /admin/users",
+      "moderateUser": "PATCH /admin/users/{id}/moderation",
+      "reports": "GET /admin/reports",
+      "updateReport": "PATCH /admin/reports/{id}",
+      "deleteItem": "DELETE /admin/items/{id}"
+    }
+  },
+  "builderGuidelines": [
+    "Gunakan warna utama deep green (#003f2a) untuk brand, navigasi, dan aksi utama.",
+    "Gunakan merah untuk aksi atau status negatif seperti hapus, blokir, tolak, dan laporkan.",
+    "Gunakan hijau/teal untuk status positif seperti ditemukan, selesai, diterima, dan berhasil.",
+    "Jaga halaman auth tetap memakai AuthLayout agar footer kebijakan dan modal konsisten.",
+    "Jangan menampilkan email IPB sebagai identitas utama di postingan; tampilkan username, NIM, jurusan, dan fakultas sesuai konteks.",
+    "Konten admin hanya boleh dirancang untuk akses role admin."
+  ]
+}

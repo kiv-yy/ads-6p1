@@ -7,7 +7,6 @@ import Home from './pages/Home';
 import ItemList from './pages/ItemList';
 import ItemDetail from './pages/ItemDetail';
 import CreateReport from './pages/CreateReport';
-import Claim from './pages/Claim';
 import Chat from './pages/Chat';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
@@ -35,7 +34,6 @@ export default function App() {
         <Route path="/items" element={<ItemList />} />
         <Route path="/items/:id" element={<ItemDetail />} />
         <Route path="/report" element={<CreateReport />} />
-        <Route path="/claims/:id" element={<Claim />} />
         <Route path="/messages" element={<Chat />} />
         <Route path="/messages/:claimId" element={<Chat />} />
         <Route path="/notifications" element={<Notifications />} />
