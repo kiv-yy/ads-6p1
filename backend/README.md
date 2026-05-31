@@ -12,7 +12,10 @@ Client React
 FastAPI Router Layer
   |
   v
-Service / Repository Layer
+Service Layer
+  |
+  v
+Repository Layer
   |
   v
 SQLAlchemy ORM
@@ -23,9 +26,10 @@ PostgreSQL / SQLite
 
 Komponen utama:
 
-- Router layer menerima request dan mengatur dependency injection.
+- Router layer menerima HTTP request/response dan dependency injection.
 - Schema layer menggunakan Pydantic untuk validasi request dan response.
-- Service/repository layer menjalankan business logic backend.
+- Service layer menjalankan business logic backend.
+- Repository layer menangani akses database dan operasi CRUD.
 - Model layer memetakan tabel database melalui SQLAlchemy.
 - Core layer menangani konfigurasi, hashing password, JWT, dan keamanan.
 - Static upload menyimpan file laporan, foto profil, dan attachment chat.
@@ -34,30 +38,38 @@ Komponen utama:
 
 ```text
 backend/
-  app/
-    core/
-    db/
-    internal/
-    models/
-    routers/
-    schemas/
-    services/
-    static/
-    dependencies.py
-    main.py
-  database/
-    dbschema.sql
+|-- app/
+|   |-- core/
+|   |-- db/
+|   |-- internal/
+|   |-- models/
+|   |-- repositories/
+|   |-- routers/
+|   |-- schemas/
+|   |-- services/
+|   |-- static/
+|   |-- dependencies.py
+|   `-- main.py
+`-- database/
+    `-- dbschema.sql
 ```
 
 ## Struktur OOP
 
 - `app/models/`: class SQLAlchemy untuk tabel database, seperti `User`, `Item`, `Claim`, `Chat`, `Report`, `Notification`, dan `AdminAction`.
 - `app/schemas/`: class Pydantic untuk request dan response DTO.
-- `app/services/`: class service/repository untuk logic fitur, seperti `UserRepository`, `PostRepository`, `ClaimRepository`, `ChatRepository`, dan `EmailService`.
+- `app/repositories/`: class repository untuk akses database dan operasi CRUD murni, seperti `UserRepository`, `ItemRepository`, `ClaimRepository`, dan `ChatRepository`.
+- `app/services/`: class service untuk business logic, orchestration, permission, status transition, notifikasi, upload file, dan pengiriman email.
 - `app/core/security.py`: class `PasswordService`, `TokenService`, dan `AuthService`.
-- `app/routers/`: route FastAPI yang tipis dan memanggil service.
+- `app/routers/`: route FastAPI yang tipis. Layer ini hanya menerima HTTP request, dependency injection, dan memanggil service.
 - `app/internal/admin.py`: route khusus admin.
 - `app/dependencies.py`: dependency injection untuk database session dan current user.
+
+Pemisahan layer:
+
+- Router Layer (`app/routers`, `app/internal`): menangani HTTP request/response dan dependency injection.
+- Service Layer (`app/services`): menangani logika bisnis utama.
+- Repository Layer (`app/repositories`): menangani akses langsung ke database.
 
 ## Konfigurasi Lingkungan
 

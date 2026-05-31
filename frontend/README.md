@@ -6,21 +6,21 @@ Frontend service untuk IPB Lost & Found dibangun menggunakan React, Vite, Tailwi
 
 ```text
 frontend/
-  src/
-    api/
-    components/
-    contexts/
-    layouts/
-    pages/
-    routes/
-    utils/
-    App.jsx
-    index.css
-    main.jsx
-  .env.example
-  package.json
-  vite.config.ts
-  vercel.json
+├── src/
+│   ├── api/
+│   ├── components/
+│   ├── contexts/
+│   ├── layouts/
+│   ├── pages/
+│   ├── routes/
+│   ├── utils/
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
+├── .env.example
+├── package.json
+├── vite.config.ts
+└── vercel.json
 ```
 
 Folder utama:

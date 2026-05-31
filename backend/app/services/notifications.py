@@ -1,10 +1,16 @@
 from uuid import UUID
 
+from sqlalchemy.orm import Session
+
+from app.dependencies import ApiError
 from app.models import Notification
-from app.services.base import BaseRepository
+from app.repositories.notifications import NotificationRepository
 
 
-class NotificationRepository(BaseRepository):
+class NotificationService:
+    def __init__(self, db: Session) -> None:
+        self.notifications = NotificationRepository(db)
+
     def create(
         self,
         user_id: UUID,
@@ -16,53 +22,31 @@ class NotificationRepository(BaseRepository):
         item_id: UUID | None = None,
         claim_id: UUID | None = None,
     ) -> Notification:
-        notification = Notification(
-            user_id=user_id,
-            actor_id=actor_id,
-            type=type,
-            title=title,
-            message=message,
-            target_url=target_url,
-            item_id=item_id,
-            claim_id=claim_id,
+        return self.notifications.create(
+            Notification(
+                user_id=user_id,
+                actor_id=actor_id,
+                type=type,
+                title=title,
+                message=message,
+                target_url=target_url,
+                item_id=item_id,
+                claim_id=claim_id,
+            )
         )
-        return self.save(notification)
-
-    def delete_chat_notification_for_claim(self, user_id: UUID, claim_id: UUID) -> None:
-        self.db.query(Notification).filter(
-            Notification.user_id == user_id,
-            Notification.claim_id == claim_id,
-            Notification.type == "chat_new",
-        ).delete(synchronize_session=False)
-        self.db.commit()
 
     def list_for_user(self, user_id: UUID, skip: int = 0, limit: int = 100) -> list[Notification]:
-        return (
-            self.db.query(Notification)
-            .filter(Notification.user_id == user_id)
-            .order_by(Notification.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        return self.notifications.list_for_user(user_id, skip=skip, limit=limit)
 
     def unread_count(self, user_id: UUID) -> int:
-        return self.db.query(Notification).filter(Notification.user_id == user_id, Notification.is_read.is_(False)).count()
+        return self.notifications.unread_count(user_id)
 
-    def get_for_user(self, notification_id: UUID, user_id: UUID) -> Notification | None:
-        return (
-            self.db.query(Notification)
-            .filter(Notification.id == notification_id, Notification.user_id == user_id)
-            .first()
-        )
-
-    def mark_read(self, notification: Notification) -> Notification:
+    def mark_read(self, notification_id: UUID, user_id: UUID) -> Notification:
+        notification = self.notifications.get_for_user(notification_id, user_id)
+        if not notification:
+            raise ApiError.not_found("Notification")
         notification.is_read = True
-        return self.save(notification)
+        return self.notifications.save(notification)
 
     def mark_all_read(self, user_id: UUID) -> None:
-        self.db.query(Notification).filter(Notification.user_id == user_id).update(
-            {Notification.is_read: True},
-            synchronize_session=False,
-        )
-        self.db.commit()
+        self.notifications.mark_all_read(user_id)

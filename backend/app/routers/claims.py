@@ -5,11 +5,9 @@ from sqlalchemy.orm import Session
 
 from app import schemas
 from app.db.database import get_db
-from app.dependencies import ApiError, get_dev_current_user
-from app.models import Claim, ClaimStatus, ItemStatus, ItemType, User, UserRole
-from app.services.authorization import AuthorizationPolicy
-from app.services.claims import ClaimRepository
-from app.services.posts import ItemRepository
+from app.dependencies import get_dev_current_user
+from app.models import Claim, User
+from app.services.claims import ClaimService
 
 
 router = APIRouter(tags=["Claims"])
@@ -21,17 +19,7 @@ def create_claim(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Claim:
-    item = ItemRepository(db).get(claim_in.item_id)
-    if not item:
-        raise ApiError.not_found("Item")
-    if item.owner_id == current_user.id:
-        raise ApiError.bad_request("You cannot claim your own item")
-    if item.status != ItemStatus.OPEN.value:
-        raise ApiError.bad_request("Only active items can be claimed")
-    claims = ClaimRepository(db)
-    if claims.get_active_for_item_and_claimant(item.id, current_user.id):
-        raise ApiError.bad_request("You already have an active claim for this item")
-    return claims.create(claim_in, claimant=current_user)
+    return ClaimService(db).create(claim_in, claimant=current_user)
 
 
 @router.get("/claims/{claim_id}", response_model=schemas.ClaimRead)
@@ -40,12 +28,7 @@ def read_claim(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Claim:
-    claim = ClaimRepository(db).get(claim_id)
-    if not claim:
-        raise ApiError.not_found("Claim")
-    if not AuthorizationPolicy.can_access_claim(claim, current_user):
-        raise ApiError.forbidden("Only claim participants can access this resource")
-    return claim
+    return ClaimService(db).get_for_participant(claim_id, current_user)
 
 
 @router.get("/items/{item_id}/claims", response_model=list[schemas.ClaimRead])
@@ -56,12 +39,7 @@ def list_item_claims(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> list[Claim]:
-    item = ItemRepository(db).get(item_id)
-    if not item:
-        raise ApiError.not_found("Item")
-    if not AuthorizationPolicy.can_manage_item(item, current_user):
-        raise ApiError.forbidden("Only item owner can view item claims")
-    return ClaimRepository(db).list_for_item(item_id=item.id, skip=skip, limit=limit)
+    return ClaimService(db).list_for_item(item_id, current_user, skip=skip, limit=limit)
 
 
 @router.get("/claims", response_model=list[schemas.ClaimRead])
@@ -71,9 +49,7 @@ def list_my_claims(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> list[Claim]:
-    if current_user.role == UserRole.ADMIN.value:
-        return ClaimRepository(db).list_all(skip=skip, limit=limit)
-    return ClaimRepository(db).list_for_user(current_user.id)
+    return ClaimService(db).list_for_user(current_user, skip=skip, limit=limit)
 
 
 @router.patch("/claims/{claim_id}", response_model=schemas.ClaimRead)
@@ -83,15 +59,4 @@ def update_claim_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Claim:
-    claims = ClaimRepository(db)
-    claim = claims.get(claim_id)
-    if not claim:
-        raise ApiError.not_found("Claim")
-    if not AuthorizationPolicy.can_moderate_claim(claim, current_user):
-        raise ApiError.forbidden("Only item owner, admin, or the claimant can cancel claims")
-        
-    # Security constraint: Claimant can ONLY reject/cancel, not accept!
-    if current_user.id == claim.claimant_id and claim_in.status != ClaimStatus.REJECTED:
-        raise ApiError.forbidden("Claimant can only cancel/reject their own claim")
-        
-    return claims.update_status(claim, claim_in.status)
+    return ClaimService(db).update_status(claim_id, claim_in, current_user)

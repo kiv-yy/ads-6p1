@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 
 from app import schemas
 from app.db.database import get_db
-from app.dependencies import ApiError, get_dev_current_user
+from app.dependencies import get_dev_current_user
 from app.models import Notification, User
-from app.services.notifications import NotificationRepository
+from app.services.notifications import NotificationService
 
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
@@ -20,7 +20,7 @@ def list_notifications(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> list[Notification]:
-    return NotificationRepository(db).list_for_user(current_user.id, skip=skip, limit=limit)
+    return NotificationService(db).list_for_user(current_user.id, skip=skip, limit=limit)
 
 
 @router.get("/summary", response_model=schemas.NotificationSummary)
@@ -28,7 +28,7 @@ def notification_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> schemas.NotificationSummary:
-    return schemas.NotificationSummary(unread_count=NotificationRepository(db).unread_count(current_user.id))
+    return schemas.NotificationSummary(unread_count=NotificationService(db).unread_count(current_user.id))
 
 
 @router.patch("/{notification_id}/read", response_model=schemas.NotificationRead)
@@ -37,11 +37,7 @@ def mark_notification_read(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Notification:
-    notifications = NotificationRepository(db)
-    notification = notifications.get_for_user(notification_id, current_user.id)
-    if not notification:
-        raise ApiError.not_found("Notification")
-    return notifications.mark_read(notification)
+    return NotificationService(db).mark_read(notification_id, current_user.id)
 
 
 @router.patch("/read-all", status_code=status.HTTP_204_NO_CONTENT)
@@ -49,5 +45,5 @@ def mark_all_notifications_read(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Response:
-    NotificationRepository(db).mark_all_read(current_user.id)
+    NotificationService(db).mark_all_read(current_user.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

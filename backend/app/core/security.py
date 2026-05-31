@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db.database import get_db
 from app.models import AccountStatus, User, UserRole
+from app.repositories.users import UserRepository
 from app.schemas import TokenData
 
 
@@ -66,7 +67,7 @@ class AuthService:
         self.token_service = token_service or TokenService()
 
     def authenticate(self, email: str, password: str) -> User | None:
-        user = self.db.query(User).filter(User.email == email.lower()).first()
+        user = UserRepository(self.db).get_by_email(email)
         if not user or not self.password_service.verify(password, user.hashed_password):
             return None
         return user
@@ -85,7 +86,7 @@ class AuthService:
         if token_data.user_id is None:
             raise credentials_exception
 
-        user = self.db.get(User, token_data.user_id)
+        user = UserRepository(self.db).get(token_data.user_id)
         if user is None:
             raise credentials_exception
         if user.account_status != AccountStatus.ACTIVE.value:

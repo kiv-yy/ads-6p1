@@ -1,21 +1,16 @@
 from uuid import UUID
-from pathlib import Path
-from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app import schemas
 from app.db.database import get_db
-from app.dependencies import ApiError, get_dev_current_user, get_optional_current_user
-from app.models import Item, ItemStatus, ItemType, User
-from app.services.authorization import AuthorizationPolicy
-from app.services.posts import ItemRepository
+from app.dependencies import get_dev_current_user, get_optional_current_user
+from app.models import Item, User
+from app.services.posts import ItemService
 
 
 router = APIRouter(tags=["Items"])
-UPLOAD_DIR = Path("app/static/uploads")
-ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
 
 
 @router.post("/items", response_model=schemas.ItemRead, status_code=status.HTTP_201_CREATED)
@@ -24,7 +19,7 @@ def create_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Item:
-    return ItemRepository(db).create(item_in, owner_id=current_user.id)
+    return ItemService(db).create(item_in, owner=current_user)
 
 
 @router.post("/items/upload-image", response_model=schemas.PostImageCreate)
@@ -32,19 +27,9 @@ async def upload_item_image(
     request: Request,
     file: UploadFile = File(...),
     _: User = Depends(get_dev_current_user),
+    db: Session = Depends(get_db),
 ) -> schemas.PostImageCreate:
-    extension = ALLOWED_IMAGE_TYPES.get(file.content_type or "")
-    if extension is None:
-        raise ApiError.bad_request("File harus berupa gambar JPG, PNG, WEBP, atau GIF")
-
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    filename = f"{uuid4()}{extension}"
-    target = UPLOAD_DIR / filename
-    content = await file.read()
-    target.write_bytes(content)
-
-    image_url = str(request.base_url).rstrip("/") + f"/static/uploads/{filename}"
-    return schemas.PostImageCreate(image_url=image_url)
+    return await ItemService(db).upload_image(request, file)
 
 
 @router.get("/items", response_model=list[schemas.ItemRead])
@@ -60,10 +45,10 @@ def list_items(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_optional_current_user),
 ) -> list[Item]:
-    return ItemRepository(db).list(
+    return ItemService(db).list(
         category=category,
-        item_type=ItemType(schemas.normalize_item_type(item_type)) if item_type else None,
-        status=ItemStatus(schemas.normalize_item_status(item_status)) if item_status else None,
+        item_type=item_type,
+        item_status=item_status,
         location=location,
         keyword=keyword or q,
         skip=skip,
@@ -74,10 +59,7 @@ def list_items(
 
 @router.get("/items/{item_id}", response_model=schemas.ItemRead)
 def read_item(item_id: UUID, db: Session = Depends(get_db)) -> Item:
-    item = ItemRepository(db).get(item_id)
-    if not item or item.status == ItemStatus.DELETED.value:
-        raise ApiError.not_found("Item")
-    return item
+    return ItemService(db).get_public(item_id)
 
 
 @router.patch("/items/{item_id}", response_model=schemas.ItemRead)
@@ -87,13 +69,7 @@ def update_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Item:
-    items = ItemRepository(db)
-    item = items.get(item_id)
-    if not item:
-        raise ApiError.not_found("Item")
-    if not AuthorizationPolicy.can_manage_item(item, current_user):
-        raise ApiError.forbidden("Not enough permissions")
-    return items.update(item, item_in)
+    return ItemService(db).update(item_id, item_in, current_user)
 
 
 @router.post("/items/{item_id}/images", response_model=schemas.PostImageRead, status_code=status.HTTP_201_CREATED)
@@ -103,13 +79,7 @@ def add_item_image(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ):
-    items = ItemRepository(db)
-    item = items.get(item_id)
-    if not item:
-        raise ApiError.not_found("Item")
-    if not AuthorizationPolicy.can_manage_item(item, current_user):
-        raise ApiError.forbidden("Not enough permissions")
-    return items.add_image(item, str(image_in.image_url))
+    return ItemService(db).add_image(item_id, image_in, current_user)
 
 
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -118,13 +88,7 @@ def delete_own_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Response:
-    items = ItemRepository(db)
-    item = items.get(item_id)
-    if not item:
-        raise ApiError.not_found("Item")
-    if not AuthorizationPolicy.can_manage_item(item, current_user):
-        raise ApiError.forbidden("Not enough permissions")
-    items.soft_delete(item)
+    ItemService(db).delete_own_item(item_id, current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -134,10 +98,4 @@ def resolve_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_dev_current_user),
 ) -> Item:
-    items = ItemRepository(db)
-    item = items.get(item_id)
-    if not item:
-        raise ApiError.not_found("Item")
-    if not AuthorizationPolicy.can_manage_item(item, current_user):
-        raise ApiError.forbidden("Only item owner can resolve this item")
-    return items.update(item, schemas.ItemUpdate(status=ItemStatus.RESOLVED))
+    return ItemService(db).resolve(item_id, current_user)

@@ -7,21 +7,21 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.security import PasswordService
 from app.models import PasswordResetToken, User
-from app.services.base import BaseRepository
+from app.repositories.password_resets import PasswordResetRepository
 from app.services.email_verification import EmailService
 
 
-class PasswordResetRepository(BaseRepository):
+class PasswordResetService:
     def __init__(
         self,
         db: Session,
         email_service: EmailService | None = None,
         password_service: PasswordService | None = None,
     ) -> None:
-        super().__init__(db)
         self.settings = get_settings()
         self.email_service = email_service or EmailService()
         self.password_service = password_service or PasswordService()
+        self.resets = PasswordResetRepository(db)
 
     @staticmethod
     def hash_token(token: str) -> str:
@@ -46,8 +46,7 @@ class PasswordResetRepository(BaseRepository):
             token_hash=self.hash_token(token),
             expires_at=self.utc_now() + timedelta(minutes=self.settings.password_reset_expire_minutes),
         )
-        self.db.add(reset)
-        self.db.commit()
+        self.resets.create(reset)
         reset_url = self.build_reset_url(token)
         self.email_service.send_password_reset_email(
             user.email,
@@ -58,15 +57,10 @@ class PasswordResetRepository(BaseRepository):
         return None if self.email_service.is_configured() else reset_url
 
     def reset_password(self, token: str, new_password: str) -> User | None:
-        reset = (
-            self.db.query(PasswordResetToken)
-            .filter(PasswordResetToken.token_hash == self.hash_token(token), PasswordResetToken.used_at.is_(None))
-            .first()
-        )
+        reset = self.resets.get_pending_by_token_hash(self.hash_token(token))
         if not reset or self.is_expired(reset.expires_at):
             return None
         reset.user.hashed_password = self.password_service.hash(new_password)
         reset.used_at = self.utc_now()
-        self.db.commit()
-        self.db.refresh(reset.user)
+        self.resets.save(reset)
         return reset.user

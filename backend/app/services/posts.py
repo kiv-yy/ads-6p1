@@ -1,20 +1,31 @@
 from datetime import datetime
-from uuid import UUID
+from pathlib import Path
+from uuid import UUID, uuid4
 
-from sqlalchemy import or_
+from fastapi import Request, UploadFile
+from sqlalchemy.orm import Session
 
 from app import schemas
-from app.models import Category, Item, ItemStatus, ItemType, PostImage, User, UserRole
-from app.services.base import BaseRepository
-from app.services.categories import CategoryRepository
+from app.dependencies import ApiError
+from app.models import Item, ItemStatus, ItemType, PostImage, User
+from app.repositories.categories import CategoryRepository
+from app.repositories.items import ItemRepository
+from app.services.authorization import AuthorizationPolicy
 
 
-class ItemRepository(BaseRepository):
-    def create(self, item_in: schemas.ItemCreate, owner_id: UUID) -> Item:
-        category = CategoryRepository(self.db).get_or_create(item_in.category)
+class ItemService:
+    upload_dir = Path("app/static/uploads")
+    allowed_image_types = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
+
+    def __init__(self, db: Session) -> None:
+        self.items = ItemRepository(db)
+        self.categories = CategoryRepository(db)
+
+    def create(self, item_in: schemas.ItemCreate, owner: User) -> Item:
+        category = self.categories.get_or_create(item_in.category)
         timestamp = item_in.timestamp or datetime.utcnow()
         item = Item(
-            owner_id=owner_id,
+            owner_id=owner.id,
             category_id=category.id,
             type=item_in.type.value,
             title=item_in.title,
@@ -25,70 +36,54 @@ class ItemRepository(BaseRepository):
             is_anonymous=item_in.is_anonymous,
             status=item_in.status.value,
         )
-        self.db.add(item)
-        self.db.flush()
+        saved_item = self.items.create(item)
         if item_in.image_url is not None:
-            self.db.add(PostImage(post_id=item.id, image_url=str(item_in.image_url)))
-        self.db.commit()
-        self.db.refresh(item)
-        return item
+            self.items.add_image(saved_item, str(item_in.image_url))
+        return saved_item
 
-    def get(self, item_id: UUID) -> Item | None:
-        return self.db.get(Item, item_id)
+    async def upload_image(self, request: Request, file: UploadFile) -> schemas.PostImageCreate:
+        extension = self.allowed_image_types.get(file.content_type or "")
+        if extension is None:
+            raise ApiError.bad_request("File harus berupa gambar JPG, PNG, WEBP, atau GIF")
+        self.upload_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"{uuid4()}{extension}"
+        target = self.upload_dir / filename
+        target.write_bytes(await file.read())
+        return schemas.PostImageCreate(image_url=str(request.base_url).rstrip("/") + f"/static/uploads/{filename}")
 
     def list(
         self,
-        category: str | None = None,
-        item_type: ItemType | None = None,
-        status: ItemStatus | None = None,
-        location: str | None = None,
-        keyword: str | None = None,
-        skip: int = 0,
-        limit: int = 20,
-        current_user: User | None = None,
+        category: str | None,
+        item_type: str | None,
+        item_status: str | None,
+        location: str | None,
+        keyword: str | None,
+        skip: int,
+        limit: int,
+        current_user: User | None,
     ) -> list[Item]:
-        query = self.db.query(Item).join(Category)
-        
-        # Enforce resolved visibility constraints based on role and ownership
-        if current_user and current_user.role == UserRole.ADMIN.value:
-            # Admins see everything based on requested status
-            if status:
-                query = query.filter(Item.status == status.value)
-            else:
-                query = query.filter(Item.status != ItemStatus.DELETED.value)
-        elif current_user:
-            if status:
-                query = query.filter(Item.status == status.value)
-            else:
-                # Default listing (no status specified)
-                # Show active items OR user's own non-deleted items
-                query = query.filter(
-                    or_(
-                        Item.status == ItemStatus.OPEN.value,
-                        Item.owner_id == current_user.id
-                    )
-                ).filter(Item.status != ItemStatus.DELETED.value)
-        else:
-            if status:
-                query = query.filter(Item.status == status.value)
-            else:
-                query = query.filter(Item.status == ItemStatus.OPEN.value)
+        return self.items.list(
+            category=category,
+            item_type=ItemType(schemas.normalize_item_type(item_type)) if item_type else None,
+            status=ItemStatus(schemas.normalize_item_status(item_status)) if item_status else None,
+            location=location,
+            keyword=keyword,
+            skip=skip,
+            limit=limit,
+            current_user=current_user,
+        )
 
-        if category:
-            query = query.filter(Category.name.ilike(f"%{category}%"))
-        if item_type:
-            query = query.filter(Item.type == item_type.value)
-        if location:
-            query = query.filter(Item.location.ilike(f"%{location}%"))
-        if keyword:
-            pattern = f"%{keyword}%"
-            query = query.filter(or_(Item.title.ilike(pattern), Item.description.ilike(pattern), Item.location.ilike(pattern)))
-        return query.order_by(Item.created_at.desc()).offset(skip).limit(limit).all()
+    def get_public(self, item_id: UUID) -> Item:
+        item = self.items.get(item_id)
+        if not item or item.status == ItemStatus.DELETED.value:
+            raise ApiError.not_found("Item")
+        return item
 
-    def update(self, item: Item, item_in: schemas.ItemUpdate) -> Item:
+    def update(self, item_id: UUID, item_in: schemas.ItemUpdate, current_user: User) -> Item:
+        item = self._get_manageable_item(item_id, current_user, "Not enough permissions")
         update_data = item_in.model_dump(exclude_unset=True)
         if "category" in update_data and update_data["category"] is not None:
-            item.category_id = CategoryRepository(self.db).get_or_create(update_data.pop("category")).id
+            item.category_id = self.categories.get_or_create(update_data.pop("category")).id
         if "timestamp" in update_data and update_data["timestamp"] is not None:
             timestamp = update_data.pop("timestamp")
             item.event_date = timestamp.date()
@@ -96,17 +91,31 @@ class ItemRepository(BaseRepository):
         if "image_url" in update_data:
             image_url = update_data.pop("image_url")
             if image_url is not None:
-                self.add_image(item, str(image_url))
+                self.items.add_image(item, str(image_url))
         if "traits" in update_data and "description" not in update_data:
             update_data["description"] = update_data.pop("traits")
         for field, value in update_data.items():
             setattr(item, field, value.value if hasattr(value, "value") else value)
-        return self.save(item)
+        return self.items.save(item)
 
-    def add_image(self, item: Item, image_url: str) -> PostImage:
-        image = PostImage(post_id=item.id, image_url=image_url)
-        return self.save(image)
+    def add_image(self, item_id: UUID, image_in: schemas.PostImageCreate, current_user: User) -> PostImage:
+        item = self._get_manageable_item(item_id, current_user, "Not enough permissions")
+        return self.items.add_image(item, str(image_in.image_url))
 
-    def soft_delete(self, item: Item) -> Item:
+    def delete_own_item(self, item_id: UUID, current_user: User) -> None:
+        item = self._get_manageable_item(item_id, current_user, "Not enough permissions")
         item.status = ItemStatus.DELETED.value
-        return self.save(item)
+        self.items.save(item)
+
+    def resolve(self, item_id: UUID, current_user: User) -> Item:
+        item = self._get_manageable_item(item_id, current_user, "Only item owner can resolve this item")
+        item.status = ItemStatus.RESOLVED.value
+        return self.items.save(item)
+
+    def _get_manageable_item(self, item_id: UUID, current_user: User, forbidden_message: str) -> Item:
+        item = self.items.get(item_id)
+        if not item:
+            raise ApiError.not_found("Item")
+        if not AuthorizationPolicy.can_manage_item(item, current_user):
+            raise ApiError.forbidden(forbidden_message)
+        return item

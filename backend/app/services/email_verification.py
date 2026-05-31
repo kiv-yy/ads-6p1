@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models import AccountStatus, EmailVerification, User
-from app.services.base import BaseRepository
+from app.repositories.email_verifications import EmailVerificationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -196,11 +196,11 @@ class EmailService:
         )
 
 
-class EmailVerificationRepository(BaseRepository):
+class EmailVerificationService:
     def __init__(self, db: Session, email_service: EmailService | None = None) -> None:
-        super().__init__(db)
         self.settings = get_settings()
         self.email_service = email_service or EmailService()
+        self.verifications = EmailVerificationRepository(db)
 
     @staticmethod
     def hash_token(token: str) -> str:
@@ -222,10 +222,7 @@ class EmailVerificationRepository(BaseRepository):
             token_hash=self.hash_token(token),
             expires_at=self.utc_now() + timedelta(minutes=self.settings.email_verification_expire_minutes),
         )
-        self.db.add(verification)
-        self.db.commit()
-        self.db.refresh(verification)
-        return verification, token
+        return self.verifications.create(verification), token
 
     def build_verification_url(self, token: str) -> str:
         return f"{self.settings.frontend_url.rstrip('/')}/verify-email?token={token}"
@@ -237,16 +234,11 @@ class EmailVerificationRepository(BaseRepository):
         return None if self.email_service.is_configured() else verification_url
 
     def verify(self, token: str) -> User | None:
-        verification = (
-            self.db.query(EmailVerification)
-            .filter(EmailVerification.token_hash == self.hash_token(token), EmailVerification.verified_at.is_(None))
-            .first()
-        )
+        verification = self.verifications.get_pending_by_token_hash(self.hash_token(token))
         if not verification or self.is_expired(verification.expires_at):
             return None
 
         verification.verified_at = self.utc_now()
         verification.user.account_status = AccountStatus.ACTIVE.value
-        self.db.commit()
-        self.db.refresh(verification.user)
+        self.verifications.save(verification)
         return verification.user

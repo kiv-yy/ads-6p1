@@ -5,7 +5,7 @@ from uuid import UUID
 from app.core.security import oauth2_scheme, AuthService
 from app.db.database import get_db
 from app.models import AccountStatus, User, UserRole
-from app.services.user_service import UserRepository
+from app.repositories.users import UserRepository
 
 
 BLOCKED_USER_MESSAGE = "Mohon maaf anda telah diblokir karena telah melakukan pelanggaran"
@@ -23,6 +23,22 @@ class ApiError:
     @staticmethod
     def bad_request(detail: str) -> HTTPException:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+    @staticmethod
+    def conflict(detail: str) -> HTTPException:
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
+
+    @staticmethod
+    def unauthorized(detail: str) -> HTTPException:
+        return HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @staticmethod
+    def service_unavailable(detail: str) -> HTTPException:
+        return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
 
 
 def get_current_or_dev_user(
