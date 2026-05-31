@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Input } from '../components/UI';
 import AuthLayout from '../components/AuthLayout';
+import BrandLogo from '../components/BrandLogo';
 import { getApiErrorMessage } from '../utils/apiError';
 
 export default function Register() {
@@ -72,9 +73,7 @@ export default function Register() {
     <AuthLayout title="Welcome to IPB Lost & Found">
       <div className="w-full max-w-lg space-y-6 animate-in fade-in zoom-in duration-300">
         <div className="text-center space-y-2">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-ipb-green text-2xl font-bold text-white shadow-lg shadow-ipb-green/20">
-            L
-          </div>
+          <BrandLogo className="mx-auto h-16 w-16" />
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-ipb-green">User Register</p>
           <h1 className="text-2xl font-bold text-gray-900">Daftar Akun Baru</h1>
         </div>

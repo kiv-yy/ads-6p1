@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../utils/cn";
 import api from "../api/axios";
 import { UserAvatar } from "./UI";
+import BrandLogo from "./BrandLogo";
 
 export const Sidebar = ({ collapsed = false, onToggle }) => {
   const { pathname } = useLocation();
@@ -38,7 +39,7 @@ export const Sidebar = ({ collapsed = false, onToggle }) => {
       )}
     >
       <div className={cn("mb-8 flex items-center gap-3", collapsed ? "px-4 justify-center" : "px-8")}>
-        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-ipb-green font-bold text-xl">L</div>
+        <BrandLogo className="w-10 h-10 rounded-xl shadow-none" />
         <div className={cn("leading-tight overflow-hidden transition-all", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
           <h1 className="font-bold text-white text-lg tracking-tight">Lost&Found</h1>
           <p className="text-[10px] uppercase tracking-widest text-white/60 font-semibold">IPB University</p>
