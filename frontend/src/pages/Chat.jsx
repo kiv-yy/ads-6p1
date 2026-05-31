@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
 import { Card, Button, Badge, UserAvatar } from '../components/UI';
 import { cn } from '../utils/cn';
+import { isLostItem } from '../utils/itemType';
 
 export default function Chat() {
   const { claimId } = useParams();
@@ -50,6 +51,11 @@ export default function Chat() {
     });
   };
   const isImageAttachment = (url) => /\.(jpe?g|png|webp|gif)(\?.*)?$/i.test(url || '');
+  const getChatItemLabel = (item) => {
+    if (!item) return 'Loading...';
+    const action = isLostItem(item.type) ? 'Kehilangan' : 'Menemukan';
+    return `${action} ${item.name || item.title || 'barang'}`;
+  };
   const sendMessagePayload = async (payload) => {
     if (!claimId) return null;
 
@@ -263,9 +269,8 @@ export default function Chat() {
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">
                     {String(activeClaim?.item_user_id) === String(user.id) ? activeClaim?.claim_user?.full_name : (activeClaim?.item?.user?.full_name || activeClaim?.item?.owner?.full_name)}
-                    {activeClaim?.item?.type && <Badge className="ml-2 py-0.5 scale-75" variant={activeClaim.item.type.toLowerCase()}>{activeClaim.item.type}</Badge>}
                   </h3>
-                  <p className="text-xs text-gray-500">{activeClaim?.item?.name || 'Loading...'}</p>
+                  <p className="text-xs text-gray-500">{getChatItemLabel(activeClaim?.item)}</p>
                 </div>
               </div>
               <Link to={`/items/${activeClaim?.item_id}`}>

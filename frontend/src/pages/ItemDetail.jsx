@@ -331,7 +331,7 @@ export default function ItemDetail() {
               <UserAvatar user={reporter} className="w-14 h-14" textClassName="text-lg" />
               <div>
                 <p className="font-bold text-gray-900">{reporter?.full_name || 'Anonim User'}</p>
-                <p className="text-sm text-gray-500">{reporter?.major || '-'}</p>
+                <p className="text-sm text-gray-500">{reporter?.username || '-'}</p>
               </div>
             </div>
             

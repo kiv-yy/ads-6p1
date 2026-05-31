@@ -152,7 +152,7 @@ export default function CreateReport() {
 
             <div className="md:col-span-2">
               <Input 
-                label={`Lokasi ${type === 'LOST' ? '' : 'Penemuan'} *`}
+                label={`Lokasi ${type === 'LOST' ? 'Hilang' : 'Penemuan'} *`}
                 placeholder="Contoh: Kantin Sapta"
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
