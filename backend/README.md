@@ -1,3 +1,5 @@
+![Lost & Found IPB](../assets/lostfoundipb.gif)
+
 # IPB Lost & Found - Backend Service
 
 Backend service untuk IPB Lost & Found dibangun menggunakan FastAPI dengan pendekatan OOP. Service ini menangani authentication, user profile, laporan barang, klaim, chat, notifikasi, report, admin moderation, upload file, dan pengiriman email.
@@ -38,20 +40,17 @@ Komponen utama:
 
 ```text
 backend/
-|-- app/
-|   |-- core/
-|   |-- db/
-|   |-- internal/
-|   |-- models/
-|   |-- repositories/
-|   |-- routers/
-|   |-- schemas/
-|   |-- services/
-|   |-- static/
-|   |-- dependencies.py
-|   `-- main.py
-`-- database/
-    `-- dbschema.sql
+├── alembic/                # (System) Folder untuk migrasi database otomatis
+├── app/
+│   ├── core/               # (Config) Konfigurasi utama, security, dan koneksi database
+│   ├── models/             # (Database) Definisi tabel SQLAlchemy
+│   ├── schemas/            # (Validation) Validasi data input/output Pydantic
+│   ├── repositories/       # (Query) Akses langsung ke database dan CRUD
+│   ├── services/           # (Logic) Logika bisnis dan aturan aplikasi
+│   ├── routers/            # (API) Endpoint URL dan controller
+│   └── main.py             # (Entry Point) Pintu masuk aplikasi FastAPI
+├── requirements.txt        # Daftar library backend yang dipakai
+└── alembic.ini             # File konfigurasi Alembic
 ```
 
 ## Struktur OOP

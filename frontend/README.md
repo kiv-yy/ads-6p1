@@ -1,3 +1,5 @@
+![Lost & Found IPB](../assets/lostfoundipb.gif)
+
 # IPB Lost & Found - Frontend Service
 
 Frontend service untuk IPB Lost & Found dibangun menggunakan React, Vite, Tailwind CSS, Axios, dan React Router. Frontend ini menyediakan halaman auth, home, pencarian laporan, detail laporan, chat, notifikasi, profil, pembuatan laporan, dan admin dashboard.
@@ -7,20 +9,20 @@ Frontend service untuk IPB Lost & Found dibangun menggunakan React, Vite, Tailwi
 ```text
 frontend/
 ├── src/
-│   ├── api/
-│   ├── components/
-│   ├── contexts/
-│   ├── layouts/
-│   ├── pages/
-│   ├── routes/
-│   ├── utils/
-│   ├── App.jsx
-│   ├── index.css
-│   └── main.jsx
-├── .env.example
-├── package.json
-├── vite.config.ts
-└── vercel.json
+│   ├── api/                # (API Client) Konfigurasi Axios dan base URL backend
+│   ├── components/         # (UI) Komponen reusable seperti Button, Input, Avatar, layout auth
+│   ├── contexts/           # (State) Context React untuk auth dan user session
+│   ├── layouts/            # (Layout) Struktur halaman utama setelah login
+│   ├── pages/              # (Views) Halaman fitur seperti Home, Cari, Chat, Profil, Admin
+│   ├── routes/             # (Routing) Guard route untuk user login dan admin
+│   ├── utils/              # (Helper) Utility untuk error API, className, dan tipe item
+│   ├── App.jsx             # (Router) Definisi route aplikasi
+│   ├── index.css           # (Styling) Tailwind CSS dan custom style global
+│   └── main.jsx            # (Entry Point) Pintu masuk aplikasi React
+├── .env.example            # Contoh konfigurasi environment frontend
+├── package.json            # Daftar script dan dependency frontend
+├── vite.config.ts          # Konfigurasi Vite
+└── vercel.json             # Konfigurasi deployment Vercel
 ```
 
 Folder utama:

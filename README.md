@@ -1,3 +1,5 @@
+![Lost & Found IPB](assets/lostfoundipb.gif)
+
 # IPB Lost & Found
 
 IPB Lost & Found adalah aplikasi web untuk membantu mahasiswa IPB University membuat laporan barang hilang, melaporkan barang ditemukan, mengajukan klaim, berkomunikasi lewat chat, dan melakukan moderasi laporan.
