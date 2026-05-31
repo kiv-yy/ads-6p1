@@ -1,4 +1,6 @@
-![Lost & Found IPB](assets/lostfoundipb.gif)
+<p align="center">
+  <img src="assets/lostfoundipb.gif" alt="Lost & Found IPB" />
+</p>
 
 # IPB Lost & Found
 
