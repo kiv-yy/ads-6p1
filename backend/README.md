@@ -42,18 +42,20 @@ Komponen utama:
 
 ```text
 backend/
-├── alembic/                # (System) Folder untuk migrasi database otomatis
 ├── app/
-│   ├── core/               # (Config) Konfigurasi utama, security, dan koneksi database
+│   ├── core/               # (Config) Konfigurasi utama dan security
+│   ├── db/                 # (Database) Koneksi SQLAlchemy dan session database
 │   ├── models/             # (Database) Definisi tabel SQLAlchemy
 │   ├── schemas/            # (Validation) Validasi data input/output Pydantic
 │   ├── repositories/       # (Query) Akses langsung ke database dan CRUD
 │   ├── services/           # (Logic) Logika bisnis dan aturan aplikasi
 │   ├── routers/            # (API) Endpoint URL dan controller
+│   ├── internal/           # (Admin) Endpoint dan logic internal admin
 │   └── main.py             # (Entry Point) Pintu masuk aplikasi FastAPI
-├── requirements.txt        # Daftar library backend yang dipakai
-└── alembic.ini             # File konfigurasi Alembic
+└── README.md               # Dokumentasi backend
 ```
+
+Catatan: project ini belum menggunakan Alembic. Struktur tabel dibuat dari model SQLAlchemy saat aplikasi berjalan, sedangkan migration tool bisa ditambahkan nanti bila dibutuhkan.
 
 ## Struktur OOP
 
@@ -83,7 +85,7 @@ Copy-Item ..\.env.example .env
 Variabel utama:
 
 ```env
-DATABASE_URL=sqlite:///./database/ads_lost_found.db
+DATABASE_URL=sqlite:///./ads_lost_found.db
 SECRET_KEY=change-this-secret
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60

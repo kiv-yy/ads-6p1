@@ -15,6 +15,7 @@ backend/app/static/uploads/
 backend/database/*.db
 backend/database/*.sqlite
 backend/database/*.sqlite3
+backend/database/
 
 # Node / Vite
 logs
